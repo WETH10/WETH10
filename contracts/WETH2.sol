@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.5.17;
+pragma solidity 0.6.10;
 // Copyright (C) 2015, 2016, 2017 Dapphub / adapted by LexDAO 2020
 contract WETH2 {
     string public name;
@@ -32,7 +32,7 @@ contract WETH2 {
                 address(this)));
     }
 
-    function() external payable {
+    receive() external payable {
         deposit();
     }
     
