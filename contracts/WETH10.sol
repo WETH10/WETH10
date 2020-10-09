@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.6.10;
-// Copyright (C) 2015, 2016, 2017 Dapphub / adapted by LexDAO 2020
+// Copyright (C) 2015, 2016, 2017 Dapphub / adapted by [] 2020
 contract WETH10 {
     string public name;
     string public symbol;
