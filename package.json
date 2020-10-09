@@ -1,0 +1,39 @@
+{
+  "name": "WETH",
+  "version": "10",
+  "description": "Wrapped Ether with ERC2612",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build": "buidler compile",
+    "test": "buidler test test/*.js",
+    "coverage": "buidler coverage --network coverage --temp build --testfiles 'test/*.js'",
+    "lint:js": "prettier ./test/**/*.js --write",
+    "lint:sol": "solhint -f table contracts/**/*.sol"
+  },
+  "author": "",
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "@nomiclabs/buidler": "^1.3.8",
+    "@nomiclabs/buidler-truffle5": "^1.3.4",
+    "@nomiclabs/buidler-web3": "^1.3.4",
+    "@openzeppelin/test-helpers": "^0.5.6",
+    "@truffle/hdwallet-provider": "^1.0.40",
+    "@types/mocha": "^8.0.0",
+    "buidler-gas-reporter": "0.1.4-beta.4",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "delegable.sol": "^0.0.3",
+    "ethereumjs-util": "^7.0.3",
+    "ethers": "^5.0.7",
+    "ganache-time-traveler": "^1.0.14",
+    "mocha": "^7.1.0",
+    "prettier": "^2.0.5",
+    "solhint": "^3.2.0",
+    "solidity-coverage": "^0.7.9",
+    "truffle": "^5.1.39",
+    "truffle-flattener": "^1.5.0"
+  }
+}
