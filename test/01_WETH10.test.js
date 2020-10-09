@@ -1,4 +1,4 @@
-const WETH2 = artifacts.require('WETH2')
+const WETH10 = artifacts.require('WETH10')
 
 const { BN, expectRevert } = require('@openzeppelin/test-helpers')
 require('chai').use(require('chai-as-promised')).should()
@@ -8,7 +8,7 @@ contract('TestOracle', (accounts) => {
   let weth
 
   beforeEach(async () => {
-    weth = await WETH2.new({ from: deployer })
+    weth = await WETH10.new({ from: deployer })
   })
 
   describe('deployment', async () => {
