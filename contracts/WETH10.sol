@@ -1,7 +1,3 @@
-/**
- *Submitted for verification at Etherscan.io on 2020-10-10
-*/
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.7.0;
 // Copyright (C) 2015, 2016, 2017 Dapphub / adapted by Ethereum Community 2020
