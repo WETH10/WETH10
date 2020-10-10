@@ -26,6 +26,7 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "delegable.sol": "^0.0.3",
+    "eth-permit": "^0.1.8",
     "ethereumjs-util": "^7.0.3",
     "ethers": "^5.0.7",
     "ganache-time-traveler": "^1.0.14",
