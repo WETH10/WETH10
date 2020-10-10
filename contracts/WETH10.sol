@@ -6,7 +6,7 @@ contract WETH10 {
     string public symbol;
     uint8  public decimals;
     bytes32 public DOMAIN_SEPARATOR;
-    bytes32 public PERMIT_TYPEHASH = keccak256("Permit(address src,address guy,uint wad,uint nonce,uint deadline)");
+    bytes32 public PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
     event  Approval(address indexed src, address indexed guy, uint wad);
     event  Transfer(address indexed src, address indexed dst, uint wad);
@@ -25,7 +25,7 @@ contract WETH10 {
         assembly {chainId := chainid()}
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
-                keccak256("EIP712Domain(string name,string version,uint chainId,address verifyingContract)"),
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
                 keccak256(bytes(name)),
                 keccak256(bytes("1")),
                 chainId,
@@ -87,16 +87,16 @@ contract WETH10 {
     }
     
     // Adapted from https://github.com/albertocuestacanada/ERC20Permit/blob/master/contracts/ERC20Permit.sol
-    function permit(address src, address guy, uint wad, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
+    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
         require(deadline >= block.timestamp, "expired");
 
         bytes32 hashStruct = keccak256(
             abi.encode(
                 PERMIT_TYPEHASH,
-                src,
-                guy,
-                wad,
-                nonces[src]++,
+                owner,
+                spender,
+                value,
+                nonces[owner]++,
                 deadline));
 
         bytes32 hash = keccak256(
@@ -106,8 +106,8 @@ contract WETH10 {
                 hashStruct));
 
         address signer = ecrecover(hash, v, r, s);
-        require(signer != address(0) && signer == src, "!signer");
+        require(signer != address(0) && signer == owner, "!signer");
 
-        _approve(src, guy, wad);
+        _approve(owner, spender, value);
     }
 }

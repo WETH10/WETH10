@@ -1,4 +1,5 @@
 const WETH10 = artifacts.require('WETH10')
+const { signERC2612Permit } = require('eth-permit');
 
 const { BN, expectRevert } = require('@openzeppelin/test-helpers')
 require('chai').use(require('chai-as-promised')).should()
@@ -56,6 +57,13 @@ contract('TestOracle', (accounts) => {
         const allowanceAfter = await weth.allowance(user1, user2)
         allowanceAfter.toString().should.equal(allowanceBefore.add(new BN('1')).toString())
       })
+
+      it('approves to increase allowance with permit', async () => {
+        const permitResult = await signERC2612Permit(web3.currentProvider, weth.address, user1, user2, '1')
+        await weth.permit(user1, user2, '1', permitResult.deadline, permitResult.v, permitResult.r, permitResult.s)
+        const allowanceAfter = await weth.allowance(user1, user2)
+        allowanceAfter.toString().should.equal('1')
+      });
 
       describe('with a positive balance', async () => {
         beforeEach(async () => {
