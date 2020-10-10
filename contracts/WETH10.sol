@@ -1,27 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.6.10;
-// Copyright (C) 2015, 2016, 2017 Dapphub / adapted by [] 2020
+pragma solidity 0.7.0;
+// Copyright (C) 2015, 2016, 2017 Dapphub / adapted by Ethereum Community 2020
 contract WETH10 {
-    string public name;
-    string public symbol;
-    uint8  public decimals;
-    bytes32 public DOMAIN_SEPARATOR;
-    bytes32 public PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+    string public constant name = "Wrapped Ether";
+    string public constant symbol = "WETH";
+    uint8  public constant decimals = 18;
+    bytes32 public immutable DOMAIN_SEPARATOR;
+    bytes32 public immutable PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
-    event  Approval(address indexed src, address indexed guy, uint wad);
-    event  Transfer(address indexed src, address indexed dst, uint wad);
-    event  Deposit(address indexed dst, uint wad);
-    event  Withdrawal(address indexed src, uint wad);
+    event  Approval(address indexed owner, address indexed spender, uint256 value);
+    event  Transfer(address indexed from, address indexed to, uint256 value);
 
-    mapping (address => uint)                       public  balanceOf;
-    mapping (address => mapping (address => uint))  public  allowance;
-    mapping (address => uint)                       public  nonces;
+    mapping (address => uint256)                       public  balanceOf;
+    mapping (address => mapping (address => uint256))  public  allowance;
+    mapping (address => uint256)                       public  nonces;
     
-    constructor() public {
-        name = "Wrapped Ether";
-        symbol = "WETH";
-        decimals = 18;
-        uint chainId;
+    constructor() {
+        uint256 chainId;
         assembly {chainId := chainid()}
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
@@ -33,61 +28,66 @@ contract WETH10 {
     }
 
     receive() external payable {
-        deposit();
-    }
-    
-    function deposit() public payable {
         balanceOf[msg.sender] += msg.value;
-        emit Deposit(msg.sender, msg.value);
+        emit Transfer(address(0), msg.sender, msg.value);
     }
     
-    function withdraw(uint wad) external {
-        require(balanceOf[msg.sender] >= wad, "!balance");
-        balanceOf[msg.sender] -= wad;
-        (bool success, ) = msg.sender.call.value(wad)("");
+    function deposit() external payable {
+        balanceOf[msg.sender] += msg.value;
+        emit Transfer(address(0), msg.sender, msg.value);
+    }
+    
+    function withdraw(uint256 value) external {
+        require(balanceOf[msg.sender] >= value, "!balance");
+        balanceOf[msg.sender] -= value;
+        (bool success, ) = msg.sender.call{value: value}("");
         require(success, "!withdraw");
-        emit Withdrawal(msg.sender, wad);
+        emit Transfer(msg.sender, address(0), value);
     }
 
-    function totalSupply() external view returns (uint) {
+    function totalSupply() external view returns (uint256) {
         return address(this).balance;
     }
     
-    function _approve(address src, address guy, uint wad) internal {
-        allowance[src][guy] = wad;
-        emit Approval(src, guy, wad);
+    function _approve(address owner, address spender, uint256 value) internal {
+        allowance[owner][spender] = value;
+        emit Approval(owner, spender, value);
     }
     
-    function approve(address guy, uint wad) external returns (bool) {
-        _approve(msg.sender, guy, wad); 
+    function approve(address spender, uint256 value) external returns (bool) {
+        _approve(msg.sender, spender, value); 
         return true;
     }
     
-    function transfer(address dst, uint wad) external returns (bool) {
-        return transferFrom(msg.sender, dst, wad);
+    function transfer(address to, uint256 value) external returns (bool) {
+        require(balanceOf[msg.sender] >= value, "!balance");
+
+        balanceOf[msg.sender] -= value;
+        balanceOf[to] += value;
+
+        emit Transfer(msg.sender, to, value);
+
+        return true;
     }
     
-    function transferFrom(address src, address dst, uint wad)
-        public
-        returns (bool)
-    {
-        require(balanceOf[src] >= wad, "!balance");
+    function transferFrom(address from, address to, uint256 value) external returns (bool) {
+        require(balanceOf[from] >= value, "!balance");
 
-        if (src != msg.sender && allowance[src][msg.sender] != uint(-1)) {
-            require(allowance[src][msg.sender] >= wad, "!allowance");
-            allowance[src][msg.sender] -= wad;
+        if (from != msg.sender && allowance[from][msg.sender] != uint256(-1)) {
+            require(allowance[from][msg.sender] >= value, "!allowance");
+            allowance[from][msg.sender] -= value;
         }
 
-        balanceOf[src] -= wad;
-        balanceOf[dst] += wad;
+        balanceOf[from] -= value;
+        balanceOf[to] += value;
 
-        emit Transfer(src, dst, wad);
+        emit Transfer(from, to, value);
 
         return true;
     }
     
     // Adapted from https://github.com/albertocuestacanada/ERC20Permit/blob/master/contracts/ERC20Permit.sol
-    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
+    function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
         require(deadline >= block.timestamp, "expired");
 
         bytes32 hashStruct = keccak256(
