@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.6.10;
 // Copyright (C) 2015, 2016, 2017 Dapphub / adapted by [] 2020
+
+import "./ERC677Receiver.sol";
+
 contract WETH10 {
     string public name;
     string public symbol;
@@ -85,6 +88,15 @@ contract WETH10 {
 
         return true;
     }
+
+    function transferAndCall(address _to, uint _value, bytes memory _data) public returns (bool success) {
+        transferFrom(msg.sender, _to, _value);
+
+        if (isContract(_to)) {
+            ERC677Receiver(_to).onTokenTransfer(msg.sender, _value, _data);
+        }
+        return true;
+    }
     
     // Adapted from https://github.com/albertocuestacanada/ERC20Permit/blob/master/contracts/ERC20Permit.sol
     function permit(address src, address guy, uint wad, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
@@ -109,5 +121,12 @@ contract WETH10 {
         require(signer != address(0) && signer == src, "!signer");
 
         _approve(src, guy, wad);
+    }
+
+
+    function isContract(address _addr) private view returns (bool hasCode) {
+        uint length;
+        assembly { length := extcodesize(_addr) }
+        return length > 0;
     }
 }
