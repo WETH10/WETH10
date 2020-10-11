@@ -45,6 +45,21 @@ contract WETH10 {
         emit Transfer(msg.sender, address(0), value);
     }
 
+    function withdrawFrom(address from, address to, uint256 value) external {
+        require(balanceOf[from] >= value, "!balance");
+
+        if (from != msg.sender && allowance[from][msg.sender] != uint256(-1)) {
+            require(allowance[from][msg.sender] >= value, "!allowance");
+            allowance[from][msg.sender] -= value;
+        }
+
+        balanceOf[from] -= value;
+
+        (bool success, ) = to.call{value: value}("");
+        require(success, "!withdraw");
+        emit Transfer(from, address(0), value);
+    }
+
     function totalSupply() external view returns (uint256) {
         return address(this).balance;
     }
