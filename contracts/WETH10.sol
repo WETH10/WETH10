@@ -1,6 +1,8 @@
 pragma solidity 0.7.0;
 // Copyright (C) 2015, 2016, 2017 Dapphub // Adapted by Ethereum Community 2020
 
+import "./ERC677Receiver.sol";
+
 contract WETH10 {
     string public constant name = "Wrapped Ether";
     string public constant symbol = "WETH";
@@ -103,6 +105,15 @@ contract WETH10 {
         _approve(msg.sender, spender, value); 
         return true;
     }
+
+    function transferAndCall(address _to, uint _value, bytes memory _data) public returns (bool success) {
+        transferFrom(msg.sender, _to, _value);
+
+        if (isContract(_to)) {
+            ERC677Receiver(_to).onTokenTransfer(msg.sender, _value, _data);
+        }
+        return true;
+    }
     
     // Adapted from https://github.com/albertocuestacanada/ERC20Permit/blob/master/contracts/ERC20Permit.sol
     function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
@@ -171,5 +182,12 @@ contract WETH10 {
         require(balanceOf[msg.sender] >= value, "!balance");
         balanceOf[msg.sender] -= value;
         emit Transfer(msg.sender, address(0), value);
+    }
+
+
+    function isContract(address _addr) private view returns (bool hasCode) {
+        uint length;
+        assembly { length := extcodesize(_addr) }
+        return length > 0;
     }
 }
