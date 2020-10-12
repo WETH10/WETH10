@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.7.0;
-// Copyright (C) 2015, 2016, 2017 Dapphub / adapted by Ethereum Community 2020
+// Copyright (C) 2015, 2016, 2017 Dapphub // Adapted by Ethereum Community 2020
 contract WETH10 {
     string public constant name = "Wrapped Ether";
     string public constant symbol = "WETH";
@@ -39,9 +39,11 @@ contract WETH10 {
     
     function withdraw(uint256 value) external {
         require(balanceOf[msg.sender] >= value, "!balance");
+        
         balanceOf[msg.sender] -= value;
         (bool success, ) = msg.sender.call{value: value}("");
         require(success, "!withdraw");
+        
         emit Transfer(msg.sender, address(0), value);
     }
 
@@ -54,9 +56,9 @@ contract WETH10 {
         }
 
         balanceOf[from] -= value;
-
         (bool success, ) = to.call{value: value}("");
         require(success, "!withdraw");
+        
         emit Transfer(from, address(0), value);
     }
 
@@ -103,7 +105,7 @@ contract WETH10 {
     
     // Adapted from https://github.com/albertocuestacanada/ERC20Permit/blob/master/contracts/ERC20Permit.sol
     function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
-        require(deadline >= block.timestamp, "expired");
+        require(block.timestamp <= deadline, "expired");
 
         bytes32 hashStruct = keccak256(
             abi.encode(
