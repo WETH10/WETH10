@@ -11,8 +11,8 @@ contract WETH10 {
     event  Approval(address indexed owner, address indexed spender, uint256 value);
     event  Transfer(address indexed from, address indexed to, uint256 value);
 
-    mapping (address => uint256)                       public  nonces;
     mapping (address => uint256)                       public  balanceOf;
+    mapping (address => uint256)                       public  nonces;
     mapping (address => mapping (address => uint256))  public  allowance;
     
     constructor() {
