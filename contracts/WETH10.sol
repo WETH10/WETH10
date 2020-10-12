@@ -11,9 +11,9 @@ contract WETH10 {
     event  Approval(address indexed owner, address indexed spender, uint256 value);
     event  Transfer(address indexed from, address indexed to, uint256 value);
 
+    mapping (address => uint256)                       public  nonces;
     mapping (address => uint256)                       public  balanceOf;
     mapping (address => mapping (address => uint256))  public  allowance;
-    mapping (address => uint256)                       public  nonces;
     
     constructor() {
         uint256 chainId;
@@ -35,6 +35,11 @@ contract WETH10 {
     function deposit() external payable {
         balanceOf[msg.sender] += msg.value;
         emit Transfer(address(0), msg.sender, msg.value);
+    }
+    
+    function depositTo(address to) external payable {
+        balanceOf[to] += msg.value;
+        emit Transfer(address(0), to, msg.value);
     }
     
     function withdraw(uint256 value) external {
