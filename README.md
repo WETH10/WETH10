@@ -1,4 +1,4 @@
 # wETH-v2
-revamped contract
+This [twitter hackathon project 🐦](https://twitter.com/r_ross_campbell/status/1314726259050639364?s=20) aims to update the canonical ["Wrapped Ether" WETH(9) contract](https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2#code) with minor but significant upgrades like [eip-2612](https://eips.ethereum.org/EIPS/eip-2612) to save Ethereum network users gas and time in making transactions with tokenized ETH on lo-trust, lo-code 🍬⛽. Maintaining syntax and functional consistency with WETH(9) and otherwise providing an easy-to-audit codebase feels important and efficient for WETH10 to continue attracting value.
 
 Rinkeby testnet deployment of latest [edit](https://github.com/wETH-v2/wETH-v2/pull/21): [0x3E4671A2E5E15e97afC973968dbA3A597BE320b6](https://rinkeby.etherscan.io/address/0x3e4671a2e5e15e97afc973968dba3a597be320b6#code) 🔨
