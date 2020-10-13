@@ -52,16 +52,6 @@ contract WETH10 {
         emit Transfer(msg.sender, address(0), value);
     }
     
-    function withdrawTo(address to, uint256 value) external {
-        require(balanceOf[msg.sender] >= value, "!balance");
-        
-        balanceOf[msg.sender] -= value;
-        (bool success, ) = to.call{value: value}("");
-        require(success, "!withdraw");
-        
-        emit Transfer(msg.sender, address(0), value);
-    }
-
     function withdrawFrom(address from, address to, uint256 value) external {
         require(balanceOf[from] >= value, "!balance");
 
@@ -75,6 +65,16 @@ contract WETH10 {
         require(success, "!withdraw");
         
         emit Transfer(from, address(0), value);
+    }
+    
+    function withdrawTo(address to, uint256 value) external {
+        require(balanceOf[msg.sender] >= value, "!balance");
+        
+        balanceOf[msg.sender] -= value;
+        (bool success, ) = to.call{value: value}("");
+        require(success, "!withdraw");
+        
+        emit Transfer(msg.sender, address(0), value);
     }
    
     function totalSupply() external view returns (uint256) {
