@@ -51,6 +51,16 @@ contract WETH10 {
         
         emit Transfer(msg.sender, address(0), value);
     }
+    
+    function withdrawTo(address to, uint256 value) external {
+        require(balanceOf[msg.sender] >= value, "!balance");
+        
+        balanceOf[msg.sender] -= value;
+        (bool success, ) = to.call{value: value}("");
+        require(success, "!withdraw");
+        
+        emit Transfer(msg.sender, address(0), value);
+    }
 
     function withdrawFrom(address from, address to, uint256 value) external {
         require(balanceOf[from] >= value, "!balance");
@@ -66,7 +76,7 @@ contract WETH10 {
         
         emit Transfer(from, address(0), value);
     }
-
+   
     function totalSupply() external view returns (uint256) {
         return address(this).balance;
     }
@@ -79,6 +89,31 @@ contract WETH10 {
     function approve(address spender, uint256 value) external returns (bool) {
         _approve(msg.sender, spender, value); 
         return true;
+    }
+    
+    // Adapted from https://github.com/albertocuestacanada/ERC20Permit/blob/master/contracts/ERC20Permit.sol
+    function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
+        require(block.timestamp <= deadline, "expired");
+
+        bytes32 hashStruct = keccak256(
+            abi.encode(
+                PERMIT_TYPEHASH,
+                owner,
+                spender,
+                value,
+                nonces[owner]++,
+                deadline));
+
+        bytes32 hash = keccak256(
+            abi.encodePacked(
+                '\x19\x01',
+                DOMAIN_SEPARATOR,
+                hashStruct));
+
+        address signer = ecrecover(hash, v, r, s);
+        require(signer != address(0) && signer == owner, "!signer");
+
+        _approve(owner, spender, value);
     }
     
     function transfer(address to, uint256 value) external returns (bool) {
@@ -106,30 +141,5 @@ contract WETH10 {
         emit Transfer(from, to, value);
 
         return true;
-    }
-    
-    // Adapted from https://github.com/albertocuestacanada/ERC20Permit/blob/master/contracts/ERC20Permit.sol
-    function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
-        require(block.timestamp <= deadline, "expired");
-
-        bytes32 hashStruct = keccak256(
-            abi.encode(
-                PERMIT_TYPEHASH,
-                owner,
-                spender,
-                value,
-                nonces[owner]++,
-                deadline));
-
-        bytes32 hash = keccak256(
-            abi.encodePacked(
-                '\x19\x01',
-                DOMAIN_SEPARATOR,
-                hashStruct));
-
-        address signer = ecrecover(hash, v, r, s);
-        require(signer != address(0) && signer == owner, "!signer");
-
-        _approve(owner, spender, value);
     }
 }
