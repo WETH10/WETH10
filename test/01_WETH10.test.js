@@ -4,7 +4,7 @@ const { signERC2612Permit } = require('eth-permit');
 const { BN, expectRevert } = require('@openzeppelin/test-helpers')
 require('chai').use(require('chai-as-promised')).should()
 
-contract('TestOracle', (accounts) => {
+contract('WETH10', (accounts) => {
   const [deployer, user1, user2] = accounts
   let weth
 
