@@ -74,9 +74,13 @@ contract WETH10 {
     function withdrawFrom(address from, address to, uint256 value) external lock {
         require(balanceOf[from] >= value, "!balance");
 
-        if (from != msg.sender && allowance[from][msg.sender] != uint256(-1)) {
-            require(allowance[from][msg.sender] >= value, "!allowance");
-            allowance[from][msg.sender] -= value;
+        
+        if (from != msg.sender) {
+            uint256 allow = allowance[from][msg.sender];
+            if (allow != uint256(-1)) {
+                require(allow >= value, "!allowance");
+                allowance[from][msg.sender] -= value;
+            }
         }
 
         balanceOf[from] -= value;
@@ -141,9 +145,12 @@ contract WETH10 {
         require(balanceOf[from] >= value, "!balance");
         require(balanceOf[to] + value >= value, "overflow");
 
-        if (from != msg.sender && allowance[from][msg.sender] != uint256(-1)) {
-            require(allowance[from][msg.sender] >= value, "!allowance");
-            allowance[from][msg.sender] -= value;
+        if (from != msg.sender) {
+            uint256 allow = allowance[from][msg.sender];
+            if (allow != uint256(-1)) {
+                require(allow >= value, "!allowance");
+                allowance[from][msg.sender] -= value;
+            }
         }
 
         balanceOf[from] -= value;
