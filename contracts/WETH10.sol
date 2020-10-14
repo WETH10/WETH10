@@ -1,5 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2015, 2016, 2017 Dapphub
+// Adapted by Ethereum Community 2020
 pragma solidity 0.7.0;
-// Copyright (C) 2015, 2016, 2017 Dapphub // Adapted by Ethereum Community 2020
 
 contract WETH10 {
     string public constant name = "Wrapped Ether";
@@ -173,3 +175,8 @@ contract WETH10 {
         emit Transfer(msg.sender, address(0), value);
     }
 }
+
+interface FlashMinterLike {
+    function executeOnFlashMint(uint256 value, bytes calldata data) external;
+}
+

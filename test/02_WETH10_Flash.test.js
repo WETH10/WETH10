@@ -15,7 +15,7 @@ contract('WETH10 - Flash Minting', (accounts) => {
   })
 
   it('flash mints', async () => {
-    flash.flashMint(weth.address, deployer, 1, { from: deployer })
+    flash.flashMint(weth.address, 1, { from: deployer })
 
     const balanceAfter = await weth.balanceOf(deployer)
     balanceAfter.toString().should.equal((new BN('0')).toString())
