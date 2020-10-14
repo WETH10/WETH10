@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.7.0;
 // Copyright (C) 2015, 2016, 2017 Dapphub // Adapted by Ethereum Community 2020
+
 contract WETH10 {
     string public constant name = "Wrapped Ether";
     string public constant symbol = "WETH";
@@ -14,7 +14,9 @@ contract WETH10 {
     mapping (address => uint256)                       public  balanceOf;
     mapping (address => uint256)                       public  nonces;
     mapping (address => mapping (address => uint256))  public  allowance;
-    
+
+    uint256 private unlocked = 1;
+
     constructor() {
         uint256 chainId;
         assembly {chainId := chainid()}
@@ -27,22 +29,29 @@ contract WETH10 {
                 address(this)));
     }
 
-    receive() external payable {
+    modifier lock() {
+        require(unlocked == 1, "locked");
+        unlocked = 0;
+        _;
+        unlocked = 1;
+    }    
+
+    receive() external payable lock {
         balanceOf[msg.sender] += msg.value;
         emit Transfer(address(0), msg.sender, msg.value);
     }
     
-    function deposit() external payable {
+    function deposit() external payable lock {
         balanceOf[msg.sender] += msg.value;
         emit Transfer(address(0), msg.sender, msg.value);
     }
     
-    function depositTo(address to) external payable {
+    function depositTo(address to) external payable lock {
         balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
     }
     
-    function withdraw(uint256 value) external {
+    function withdraw(uint256 value) external lock {
         require(balanceOf[msg.sender] >= value, "!balance");
         
         balanceOf[msg.sender] -= value;
@@ -52,7 +61,7 @@ contract WETH10 {
         emit Transfer(msg.sender, address(0), value);
     }
     
-    function withdrawTo(address to, uint256 value) external {
+    function withdrawTo(address to, uint256 value) external lock {
         require(balanceOf[msg.sender] >= value, "!balance");
         
         balanceOf[msg.sender] -= value;
@@ -62,7 +71,7 @@ contract WETH10 {
         emit Transfer(msg.sender, address(0), value);
     }
     
-    function withdrawFrom(address from, address to, uint256 value) external {
+    function withdrawFrom(address from, address to, uint256 value) external lock {
         require(balanceOf[from] >= value, "!balance");
 
         if (from != msg.sender && allowance[from][msg.sender] != uint256(-1)) {
@@ -118,6 +127,7 @@ contract WETH10 {
     
     function transfer(address to, uint256 value) external returns (bool) {
         require(balanceOf[msg.sender] >= value, "!balance");
+        require(balanceOf[to] + value >= value, "overflow");
 
         balanceOf[msg.sender] -= value;
         balanceOf[to] += value;
@@ -129,6 +139,7 @@ contract WETH10 {
     
     function transferFrom(address from, address to, uint256 value) external returns (bool) {
         require(balanceOf[from] >= value, "!balance");
+        require(balanceOf[to] + value >= value, "overflow");
 
         if (from != msg.sender && allowance[from][msg.sender] != uint256(-1)) {
             require(allowance[from][msg.sender] >= value, "!allowance");
@@ -141,5 +152,17 @@ contract WETH10 {
         emit Transfer(from, to, value);
 
         return true;
+    }
+
+    function flashMint(uint256 value, bytes calldata data) external lock {
+        balanceOf[msg.sender] += value;
+        require(balanceOf[msg.sender] >= value, "overflow");
+        emit Transfer(address(0), msg.sender, value);
+
+        FlashMinterLike(msg.sender).executeOnFlashMint(value, data);
+
+        require(balanceOf[msg.sender] >= value, "!balance");
+        balanceOf[msg.sender] -= value;
+        emit Transfer(msg.sender, address(0), value);
     }
 }
