@@ -1,7 +1,5 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.7.0;
 // Copyright (C) 2015, 2016, 2017 Dapphub // Adapted by Ethereum Community 2020
-
 
 contract WETH10 {
     string public constant name = "Wrapped Ether";
@@ -17,7 +15,7 @@ contract WETH10 {
     mapping (address => uint256)                       public  nonces;
     mapping (address => mapping (address => uint256))  public  allowance;
 
-    uint public unlocked = 1;
+    uint256 private unlocked = 1;
 
     constructor() {
         uint256 chainId;
@@ -32,7 +30,7 @@ contract WETH10 {
     }
 
     modifier lock() {
-        require(unlocked == 1, 'locked');
+        require(unlocked == 1, "locked");
         unlocked = 0;
         _;
         unlocked = 1;
@@ -167,8 +165,4 @@ contract WETH10 {
         balanceOf[msg.sender] -= value;
         emit Transfer(msg.sender, address(0), value);
     }
-}
-
-interface FlashMinterLike {
-    function executeOnFlashMint(uint256 value, bytes calldata data) external;
 }
