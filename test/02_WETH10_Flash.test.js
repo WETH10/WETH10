@@ -27,6 +27,13 @@ contract('WETH10 - Flash Minting', (accounts) => {
     flashData.toString().should.equal(deployer)
   })
 
+  it('cannot reenter during a flash mint', async () => {
+    await expectRevert(
+      flash.flashMintReentry(weth.address, 1, { from: deployer }),
+      'locked'
+    )
+  })
+
   it('cannot withdraw during a flash mint', async () => {
     await expectRevert(
       flash.flashMintAndWithdraw(weth.address, 1, { from: deployer }),
