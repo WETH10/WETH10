@@ -36,24 +36,29 @@ contract WETH10 {
         unlocked = 0;
         _;
         unlocked = 1;
-    }    
+    }
+
+    modifier isUnlocked() {
+        require(unlocked == 1, "locked");
+        _;
+    }
 
     receive() external payable lock {
         balanceOf[msg.sender] += msg.value;
         emit Transfer(address(0), msg.sender, msg.value);
     }
     
-    function deposit() external payable lock {
+    function deposit() external payable {
         balanceOf[msg.sender] += msg.value;
         emit Transfer(address(0), msg.sender, msg.value);
     }
     
-    function depositTo(address to) external payable lock {
+    function depositTo(address to) external payable {
         balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
     }
     
-    function withdraw(uint256 value) external lock {
+    function withdraw(uint256 value) external isUnlocked {
         require(balanceOf[msg.sender] >= value, "!balance");
         
         balanceOf[msg.sender] -= value;
@@ -63,7 +68,7 @@ contract WETH10 {
         emit Transfer(msg.sender, address(0), value);
     }
     
-    function withdrawTo(address to, uint256 value) external lock {
+    function withdrawTo(address to, uint256 value) external isUnlocked {
         require(balanceOf[msg.sender] >= value, "!balance");
         
         balanceOf[msg.sender] -= value;
@@ -73,9 +78,8 @@ contract WETH10 {
         emit Transfer(msg.sender, address(0), value);
     }
     
-    function withdrawFrom(address from, address to, uint256 value) external lock {
+    function withdrawFrom(address from, address to, uint256 value) external isUnlocked {
         require(balanceOf[from] >= value, "!balance");
-
         
         if (from != msg.sender) {
             uint256 allow = allowance[from][msg.sender];
