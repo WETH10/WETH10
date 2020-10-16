@@ -1,7 +1,9 @@
 pragma solidity 0.7.0;
 // Copyright (C) 2015, 2016, 2017 Dapphub // Adapted by Ethereum Community 2020
 
-import "./ERC677Receiver.sol";
+interface ERC677Receiver {
+    function onTokenTransfer(address sender, uint value, bytes memory data) external;
+}
 
 contract WETH10 {
     string public constant name = "Wrapped Ether";
@@ -106,12 +108,10 @@ contract WETH10 {
         return true;
     }
 
-    function transferAndCall(address _to, uint _value, bytes memory _data) public returns (bool success) {
-        transferFrom(msg.sender, _to, _value);
+    function transferAndCall(address to, uint value, bytes calldata data) external returns (bool success) {
+        transferFrom(msg.sender, to, value);
 
-        if (isContract(_to)) {
-            ERC677Receiver(_to).onTokenTransfer(msg.sender, _value, _data);
-        }
+        ERC677Receiver(to).onTokenTransfer(msg.sender, value, data);
         return true;
     }
     
@@ -182,12 +182,5 @@ contract WETH10 {
         require(balanceOf[msg.sender] >= value, "!balance");
         balanceOf[msg.sender] -= value;
         emit Transfer(msg.sender, address(0), value);
-    }
-
-
-    function isContract(address _addr) private view returns (bool hasCode) {
-        uint length;
-        assembly { length := extcodesize(_addr) }
-        return length > 0;
     }
 }
