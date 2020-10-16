@@ -189,11 +189,4 @@ contract WETH10 {
         balanceOf[msg.sender] -= value;
         emit Transfer(msg.sender, address(0), value);
     }
-
-
-    function isContract(address _addr) private view returns (bool hasCode) {
-        uint length;
-        assembly { length := extcodesize(_addr) }
-        return length > 0;
-    }
 }
