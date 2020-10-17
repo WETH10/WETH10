@@ -10,7 +10,7 @@ interface FlashMintableLike {
 }
 
 contract FlashMinter {
-    enum Action {BALANCE, WITHDRAW, WITHDRAW_TO, WITHDRAW_FROM}
+    enum Action {BALANCE, FLASH, WITHDRAW, WITHDRAW_TO, WITHDRAW_FROM}
 
     uint256 public flashBalance;
     uint256 public flashValue;
@@ -24,6 +24,8 @@ contract FlashMinter {
         flashData = target;  // Here msg.sender is the weth contract, and target is the user
         if (action == Action.BALANCE) {
             flashBalance = FlashMintableLike(msg.sender).balanceOf(address(this));
+        } else if (action == Action.FLASH) {
+            flashMintReentry(msg.sender, value);
         } else if (action == Action.WITHDRAW) {
             FlashMintableLike(msg.sender).withdraw(value);
         } else if (action == Action.WITHDRAW_TO) {
@@ -33,23 +35,28 @@ contract FlashMinter {
         }
     }
 
-    function flashMint(address target, uint256 value) external {
+    function flashMint(address target, uint256 value) public {
         // Use this to pack arbitrary data to `executeOnFlashMint`
         bytes memory data = abi.encode(Action.BALANCE, msg.sender); // Here msg.sender is the user, and target is the weth contract
         FlashMintableLike(target).flashMint(value, data);
     }
 
-    function flashMintAndWithdraw(address target, uint256 value) external {
+    function flashMintReentry(address target, uint256 value) public {
+        bytes memory data = abi.encode(Action.FLASH, msg.sender); // Here msg.sender is the user, and target is the weth contract
+        FlashMintableLike(target).flashMint(value, data);
+    }
+
+    function flashMintAndWithdraw(address target, uint256 value) public {
         bytes memory data = abi.encode(Action.WITHDRAW, msg.sender); // Here msg.sender is the user, and target is the weth contract
         FlashMintableLike(target).flashMint(value, data);
     }
 
-    function flashMintAndWithdrawTo(address target, uint256 value) external {
+    function flashMintAndWithdrawTo(address target, uint256 value) public {
         bytes memory data = abi.encode(Action.WITHDRAW_TO, msg.sender); // Here msg.sender is the user, and target is the weth contract
         FlashMintableLike(target).flashMint(value, data);
     }
 
-    function flashMintAndWithdrawFrom(address target, uint256 value) external {
+    function flashMintAndWithdrawFrom(address target, uint256 value) public {
         bytes memory data = abi.encode(Action.WITHDRAW_FROM, msg.sender); // Here msg.sender is the user, and target is the weth contract
         FlashMintableLike(target).flashMint(value, data);
     }
