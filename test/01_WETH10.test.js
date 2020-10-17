@@ -1,5 +1,6 @@
 const WETH10 = artifacts.require('WETH10')
 const { signERC2612Permit } = require('eth-permit');
+const TestERC677Receiver = artifacts.require('TestERC677Receiver')
 
 const { BN, expectRevert } = require('@openzeppelin/test-helpers');
 const { web3 } = require('@openzeppelin/test-helpers/src/setup');
@@ -83,6 +84,19 @@ contract('WETH10', (accounts) => {
         const balanceAfter = await weth.balanceOf(user2)
         balanceAfter.toString().should.equal(balanceBefore.add(new BN('1')).toString())
       })
+
+      it('transfers with transferAndCall', async () => {
+        const receiver = await TestERC677Receiver.new()
+        await weth.transferAndCall(receiver.address, 1, '0x11', { from: user1 })
+
+        const events = await receiver.getPastEvents()
+        events.length.should.equal(1)
+        events[0].event.should.equal('TransferReceived')
+        events[0].returnValues.token.should.equal(weth.address)
+        events[0].returnValues.sender.should.equal(user1)
+        events[0].returnValues.value.should.equal('1')
+        events[0].returnValues.data.should.equal('0x11')
+      });
 
       it('approves to increase allowance', async () => {
         const allowanceBefore = await weth.allowance(user1, user2)
