@@ -92,6 +92,22 @@ contract WETH10 {
         emit Transfer(address(0), to, msg.value);
     }
 
+
+    /// @dev `msg.value` of ether sent to contract grants `to` account a matching increase in WETH10 token balance,
+    /// after which a call is executed to an ERC677-compliant contract.
+    /// Returns boolean value indicating whether operation succeeded.
+    /// Emits {Transfer} event.
+    /// Requirements:
+    ///   - caller account must have at least `value` WETH10 token and transfer to account (`to`) cannot cause overflow.
+    /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
+    function depositToAndCall(address to, bytes calldata data) external payable returns (bool success) {
+        balanceOf[to] += msg.value;
+        emit Transfer(address(0), to, msg.value);
+
+        ERC677Receiver(to).onTokenTransfer(msg.sender, msg.value, data);
+        return true;
+    }
+
     /// @dev Flash mints WETH10 token and burns from caller account.
     /// Arbitrary data can be passed as a bytes calldata parameter.
     /// Lock check provided for reentrancy guard.

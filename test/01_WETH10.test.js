@@ -41,6 +41,19 @@ contract('WETH10', (accounts) => {
       balanceAfter.toString().should.equal(balanceBefore.add(new BN('1')).toString())
     })
 
+    it('deposits with depositToAndCall', async () => {
+      const receiver = await TestERC677Receiver.new()
+      await weth.depositToAndCall(receiver.address, '0x11', { from: user1, value: 1 })
+
+      const events = await receiver.getPastEvents()
+      events.length.should.equal(1)
+      events[0].event.should.equal('TransferReceived')
+      events[0].returnValues.token.should.equal(weth.address)
+      events[0].returnValues.sender.should.equal(user1)
+      events[0].returnValues.value.should.equal('1')
+      events[0].returnValues.data.should.equal('0x11')
+    });
+
     describe('with a positive balance', async () => {
       beforeEach(async () => {
         await weth.deposit({ from: user1, value: 10 })
