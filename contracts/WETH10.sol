@@ -36,7 +36,9 @@ contract WETH10 {
                 keccak256(bytes(name)),
                 keccak256(bytes("1")),
                 chainId,
-                address(this)));
+                address(this)
+            )
+        );
     }
 
     modifier lock() {
@@ -44,47 +46,46 @@ contract WETH10 {
         unlocked = 0;
         _;
         unlocked = 1;
-    }    
+    }
 
     receive() external payable lock {
         balanceOf[msg.sender] += msg.value;
         emit Transfer(address(0), msg.sender, msg.value);
     }
-    
+
     function deposit() external payable lock {
         balanceOf[msg.sender] += msg.value;
         emit Transfer(address(0), msg.sender, msg.value);
     }
-    
+
     function depositTo(address to) external payable lock {
         balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
     }
-    
+
     function withdraw(uint256 value) external lock {
         require(balanceOf[msg.sender] >= value, "!balance");
-        
+
         balanceOf[msg.sender] -= value;
         (bool success, ) = msg.sender.call{value: value}("");
         require(success, "!withdraw");
-        
+
         emit Transfer(msg.sender, address(0), value);
     }
-    
+
     function withdrawTo(address to, uint256 value) external lock {
         require(balanceOf[msg.sender] >= value, "!balance");
-        
+
         balanceOf[msg.sender] -= value;
         (bool success, ) = to.call{value: value}("");
         require(success, "!withdraw");
-        
+
         emit Transfer(msg.sender, address(0), value);
     }
-    
+
     function withdrawFrom(address from, address to, uint256 value) external lock {
         require(balanceOf[from] >= value, "!balance");
 
-        
         if (from != msg.sender) {
             uint256 allow = allowance[from][msg.sender];
             if (allow != uint256(-1)) {
@@ -96,21 +97,21 @@ contract WETH10 {
         balanceOf[from] -= value;
         (bool success, ) = to.call{value: value}("");
         require(success, "!withdraw");
-        
+
         emit Transfer(from, address(0), value);
     }
-    
+
     function totalSupply() external view returns (uint256) {
         return address(this).balance;
     }
-    
+
     function _approve(address owner, address spender, uint256 value) internal {
         allowance[owner][spender] = value;
         emit Approval(owner, spender, value);
     }
-    
+
     function approve(address spender, uint256 value) external returns (bool) {
-        _approve(msg.sender, spender, value); 
+        _approve(msg.sender, spender, value);
         return true;
     }
 
@@ -120,7 +121,7 @@ contract WETH10 {
         ERC677Receiver(to).onTokenTransfer(msg.sender, value, data);
         return true;
     }
-    
+
     // Adapted from https://github.com/albertocuestacanada/ERC20Permit/blob/master/contracts/ERC20Permit.sol
     function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
         require(block.timestamp <= deadline, "expired");
@@ -145,7 +146,7 @@ contract WETH10 {
 
         _approve(owner, spender, value);
     }
-    
+
     function transfer(address to, uint256 value) external returns (bool) {
         require(balanceOf[msg.sender] >= value, "!balance");
         require(balanceOf[to] + value >= value, "overflow");
@@ -157,7 +158,7 @@ contract WETH10 {
 
         return true;
     }
-    
+
     function transferFrom(address from, address to, uint256 value) public returns (bool) {
         require(balanceOf[from] >= value, "!balance");
         require(balanceOf[to] + value >= value, "overflow");
