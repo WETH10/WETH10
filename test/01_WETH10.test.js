@@ -1,5 +1,5 @@
 const WETH10 = artifacts.require('WETH10')
-const { signERC2612Permit } = require('eth-permit');
+const { signERC2612Permit } = require('eth-permit')
 const TestERC677Receiver = artifacts.require('TestERC677Receiver')
 
 const { BN, expectRevert } = require('@openzeppelin/test-helpers')
@@ -63,7 +63,7 @@ contract('WETH10', (accounts) => {
         events[0].returnValues.sender.should.equal(user1)
         events[0].returnValues.value.should.equal('1')
         events[0].returnValues.data.should.equal('0x11')
-      });
+      })
 
       it('approves to increase allowance', async () => {
         const allowanceBefore = await weth.allowance(user1, user2)
@@ -77,7 +77,7 @@ contract('WETH10', (accounts) => {
         await weth.permit(user1, user2, '1', permitResult.deadline, permitResult.v, permitResult.r, permitResult.s)
         const allowanceAfter = await weth.allowance(user1, user2)
         allowanceAfter.toString().should.equal('1')
-      });
+      })
 
       describe('with a positive balance', async () => {
         beforeEach(async () => {
