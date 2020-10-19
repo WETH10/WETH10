@@ -57,6 +57,7 @@ contract WETH10 {
     }
     
     function depositTo(address to) external payable lock {
+        require(to != address(this), '!contract');
         balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
     }
@@ -72,6 +73,7 @@ contract WETH10 {
     }
     
     function withdrawTo(address to, uint256 value) external lock {
+        require(to != address(this), '!contract');
         require(balanceOf[msg.sender] >= value, "!balance");
         
         balanceOf[msg.sender] -= value;
@@ -82,6 +84,7 @@ contract WETH10 {
     }
     
     function withdrawFrom(address from, address to, uint256 value) external lock {
+        require(to != address(this), '!contract');
         require(balanceOf[from] >= value, "!balance");
 
         
@@ -147,6 +150,7 @@ contract WETH10 {
     }
     
     function transfer(address to, uint256 value) external returns (bool) {
+        require(to != address(this), '!contract');
         require(balanceOf[msg.sender] >= value, "!balance");
         require(balanceOf[to] + value >= value, "overflow");
 
@@ -159,6 +163,7 @@ contract WETH10 {
     }
     
     function transferFrom(address from, address to, uint256 value) public returns (bool) {
+        require(to != address(this), '!contract');
         require(balanceOf[from] >= value, "!balance");
         require(balanceOf[to] + value >= value, "overflow");
 

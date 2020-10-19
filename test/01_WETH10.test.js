@@ -65,6 +65,10 @@ contract('WETH10', (accounts) => {
         events[0].returnValues.data.should.equal('0x11')
       });
 
+      it('should not transfer to the contract address', async () => {
+        await expectRevert(weth.transfer(weth.address, 1, { from: user1 }), '!contract');
+      });
+
       it('approves to increase allowance', async () => {
         const allowanceBefore = await weth.allowance(user1, user2)
         await weth.approve(user2, 1, { from: user1 })
