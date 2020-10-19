@@ -97,7 +97,7 @@ contract WETH10 {
     /// @dev `msg.value` of ether sent to contract grants `to` account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to `to` account.
     function depositTo(address to) external payable {
-        require(_balanceOf[to] + msg.value >= msg.value, "overflow");
+        require(to != address(this), "!recipient");
 
         _balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
@@ -126,6 +126,7 @@ contract WETH10 {
     function flashMint(uint256 value, bytes calldata data) external lock {
         _balanceOf[msg.sender] += value;
         require(_balanceOf[msg.sender] >= value, "overflow");
+
         emit Transfer(address(0), msg.sender, value);
 
         FlashMinterLike(msg.sender).executeOnFlashMint(value, data);
@@ -144,6 +145,7 @@ contract WETH10 {
         require(_balanceOf[msg.sender] >= value, "!balance");
         
         _balanceOf[msg.sender] -= value;
+
         (bool success, ) = msg.sender.call{value: value}("");
         require(success, "!withdraw");
 
@@ -159,6 +161,7 @@ contract WETH10 {
         require(_balanceOf[msg.sender] >= value, "!balance");
         
         _balanceOf[msg.sender] -= value;
+
         (bool success, ) = to.call{value: value}("");
         require(success, "!withdraw");
 
@@ -268,7 +271,7 @@ contract WETH10 {
     /// Requirements:
     /// - owner account (`from`) must have at least `value` WETH10 token and transfer to account (`to`) cannot cause overflow.
     /// - caller account must have at least `value` allowance from account (`from`).
-    function transferFrom(address from, address to, uint256 value) public returns (bool) {
+    function transferFrom(address from, address to, uint256 value) external returns (bool) {
         require(_balanceOf[from] >= value, "!balance");
         require(_balanceOf[to] + value >= value, "overflow");
 
