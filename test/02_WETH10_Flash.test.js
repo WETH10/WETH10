@@ -1,7 +1,7 @@
 const WETH10 = artifacts.require('WETH10')
 const FlashMinter = artifacts.require('FlashMinter')
 
-const { BN } = require('@openzeppelin/test-helpers')
+const { BN, expectRevert } = require('@openzeppelin/test-helpers')
 require('chai').use(require('chai-as-promised')).should()
 
 contract('WETH10 - Flash Minting', (accounts) => {
@@ -24,6 +24,34 @@ contract('WETH10 - Flash Minting', (accounts) => {
     const flashValue = await flash.flashValue()
     flashValue.toString().should.equal((new BN('1')).toString())
     const flashData = await flash.flashData()
-    flashData.toString().should.equal(weth.address)
+    flashData.toString().should.equal(deployer)
+  })
+
+  it('cannot reenter during a flash mint', async () => {
+    await expectRevert(
+      flash.flashMintReentry(weth.address, 1, { from: deployer }),
+      'locked'
+    )
+  })
+
+  it('cannot withdraw during a flash mint', async () => {
+    await expectRevert(
+      flash.flashMintAndWithdraw(weth.address, 1, { from: deployer }),
+      'locked'
+    )
+  })
+  
+  it('cannot withdrawTo during a flash mint', async () => {
+    await expectRevert(
+      flash.flashMintAndWithdrawTo(weth.address, 1, { from: deployer }),
+      'locked'
+    )
+  })
+
+  it('cannot withdrawFrom during a flash mint', async () => {
+    await expectRevert(
+      flash.flashMintAndWithdrawFrom(weth.address, 1, { from: deployer }),
+      'locked'
+    )
   })
 })
