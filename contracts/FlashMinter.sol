@@ -5,6 +5,7 @@ interface FlashMinterLike {
     function balanceOf(address) external returns (uint256);
     function executeOnFlashMint(uint256 value, bytes calldata data) external;
     function flashMint(uint256, bytes calldata) external;
+    function flashReturn(uint256 value) external;
 }
 
 contract FlashMinter {
@@ -17,6 +18,7 @@ contract FlashMinter {
         (address target) = abi.decode(data, (address)); // Use this to unpack arbitrary data
         flashData = target;
         flashBalance = FlashMinterLike(target).balanceOf(address(this));
+        FlashMinterLike(target).flashReturn(value);
     }
 
     function flashMint(address target, uint256 value) external {

@@ -24,6 +24,7 @@ contract WETH10 {
     mapping (address => uint256)                       public  balanceOf;
     mapping (address => uint256)                       public  nonces;
     mapping (address => mapping (address => uint256))  public  allowance;
+    mapping (address => uint256)                       public  flashMintBalance;
 
     uint256 private unlocked = 1;
 
@@ -39,29 +40,22 @@ contract WETH10 {
                 address(this)));
     }
 
-    modifier lock() {
-        require(unlocked == 1, "locked");
-        unlocked = 0;
-        _;
-        unlocked = 1;
-    }    
-
-    receive() external payable lock {
+    receive() external payable {
         balanceOf[msg.sender] += msg.value;
         emit Transfer(address(0), msg.sender, msg.value);
     }
     
-    function deposit() external payable lock {
+    function deposit() external payable {
         balanceOf[msg.sender] += msg.value;
         emit Transfer(address(0), msg.sender, msg.value);
     }
     
-    function depositTo(address to) external payable lock {
+    function depositTo(address to) external payable {
         balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
     }
     
-    function withdraw(uint256 value) external lock {
+    function withdraw(uint256 value) external {
         require(balanceOf[msg.sender] >= value, "!balance");
         
         balanceOf[msg.sender] -= value;
@@ -71,7 +65,7 @@ contract WETH10 {
         emit Transfer(msg.sender, address(0), value);
     }
     
-    function withdrawTo(address to, uint256 value) external lock {
+    function withdrawTo(address to, uint256 value) external {
         require(balanceOf[msg.sender] >= value, "!balance");
         
         balanceOf[msg.sender] -= value;
@@ -81,7 +75,7 @@ contract WETH10 {
         emit Transfer(msg.sender, address(0), value);
     }
     
-    function withdrawFrom(address from, address to, uint256 value) external lock {
+    function withdrawFrom(address from, address to, uint256 value) external {
         require(balanceOf[from] >= value, "!balance");
 
         
@@ -178,15 +172,26 @@ contract WETH10 {
         return true;
     }
 
-    function flashMint(uint256 value, bytes calldata data) external lock {
+    function flashMint(uint256 value, bytes calldata data) external {
         balanceOf[msg.sender] += value;
         require(balanceOf[msg.sender] >= value, "overflow");
+
+        flashMintBalance[msg.sender] += value;
+        require(flashMintBalance[msg.sender] >= value, "overflow");
+
         emit Transfer(address(0), msg.sender, value);
 
         FlashMinterLike(msg.sender).executeOnFlashMint(value, data);
 
+        require(flashMintBalance[msg.sender] == 0, "!balance");
+    }
+
+    function flashReturn(uint256 value) external {
         require(balanceOf[msg.sender] >= value, "!balance");
+        require(flashMintBalance[msg.sender] >= value, "!balance");
+
         balanceOf[msg.sender] -= value;
+        flashMintBalance[msg.sender] -= value;
         emit Transfer(msg.sender, address(0), value);
     }
 }
