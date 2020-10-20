@@ -126,6 +126,7 @@ contract WETH10 {
     function flashMint(uint256 value, bytes calldata data) external lock {
         _balanceOf[msg.sender] += value;
         require(_balanceOf[msg.sender] >= value, "overflow");
+
         emit Transfer(address(0), msg.sender, value);
 
         FlashMinterLike(msg.sender).executeOnFlashMint(value, data);
@@ -203,8 +204,9 @@ contract WETH10 {
     /// Requirements:
     ///   - allowance reset required to mitigate race condition - see https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729.
     function approve(address spender, uint256 value) external returns (bool) {
-        require(value == 0 || allowance[msg.sender][spender] == 0, "!reset");
-        _approve(msg.sender, spender, value);
+        require(value == 0 || allowance[msg.sender][spender] == 0, "!reset"); 
+        allowance[msg.sender][spender] = value;
+        emit Approval(msg.sender, spender, value);
         return true;
     }
 
@@ -238,7 +240,8 @@ contract WETH10 {
         address signer = ecrecover(hash, v, r, s);
         require(signer != address(0) && signer == owner, "!signer");
 
-        _approve(owner, spender, value);
+        allowance[owner][spender] = value;
+        emit Approval(owner, spender, value);
     }
 
     /// @dev Moves `value` WETH10 token from caller's account to account (`to`).

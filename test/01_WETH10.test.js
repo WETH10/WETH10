@@ -129,6 +129,15 @@ contract('WETH10', (accounts) => {
         await expectRevert(weth.transferFrom(user1, weth.address, 1, { from: user1 }), 'overflow')
       })
 
+      it('should not deposit to the contract address', async () => {
+        await expectRevert(weth.depositTo(weth.address, { value: 1, from: user1 }), '!recipient')
+      })
+
+      it('should not withdraw to the contract address', async () => {
+        await expectRevert(weth.withdrawTo(weth.address, 1, { from: user1 }), '!withdraw')
+        await expectRevert(weth.withdrawFrom(user1, weth.address, 1, { from: user1 }), '!withdraw')
+      })
+
       it('approves to increase allowance', async () => {
         const allowanceBefore = await weth.allowance(user1, user2)
         await weth.approve(user2, 1, { from: user1 })
