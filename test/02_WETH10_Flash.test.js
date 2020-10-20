@@ -1,5 +1,5 @@
 const WETH10 = artifacts.require('WETH10')
-const FlashMinter = artifacts.require('FlashMinter')
+const TestFlashMinter = artifacts.require('TestFlashMinter')
 
 const { BN, expectRevert } = require('@openzeppelin/test-helpers')
 require('chai').use(require('chai-as-promised')).should()
@@ -11,7 +11,7 @@ contract('WETH10 - Flash Minting', (accounts) => {
 
   beforeEach(async () => {
     weth = await WETH10.new({ from: deployer })
-    flash = await FlashMinter.new({ from: deployer })
+    flash = await TestFlashMinter.new({ from: deployer })
   })
 
   it('flash mints', async () => {
