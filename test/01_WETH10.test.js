@@ -1,9 +1,9 @@
 const WETH10 = artifacts.require('WETH10')
-const { signERC2612Permit } = require('eth-permit');
+const { signERC2612Permit } = require('eth-permit')
 const TestERC677Receiver = artifacts.require('TestERC677Receiver')
 
-const { BN, expectRevert } = require('@openzeppelin/test-helpers');
-const { web3 } = require('@openzeppelin/test-helpers/src/setup');
+const { BN, expectRevert } = require('@openzeppelin/test-helpers')
+const { web3 } = require('@openzeppelin/test-helpers/src/setup')
 require('chai').use(require('chai-as-promised')).should()
 
 contract('WETH10', (accounts) => {
@@ -52,7 +52,7 @@ contract('WETH10', (accounts) => {
       events[0].returnValues.sender.should.equal(user1)
       events[0].returnValues.value.should.equal('1')
       events[0].returnValues.data.should.equal('0x11')
-    });
+    })
 
     describe('with a positive balance', async () => {
       beforeEach(async () => {
@@ -61,7 +61,7 @@ contract('WETH10', (accounts) => {
 
       it('reads the supply', async () => {
         const supply = await weth.totalSupply()
-        supply.toString().should.equal((new BN('10')).toString())
+        supply.toString().should.equal(new BN('10').toString())
       })
 
       it('withdraws ether', async () => {
@@ -76,10 +76,10 @@ contract('WETH10', (accounts) => {
         const toBalanceBefore = new BN(await web3.eth.getBalance(user2))
 
         await weth.withdrawTo(user2, 1, { from: user1 })
-        
+
         const fromBalanceAfter = await weth.balanceOf(user1)
         const toBalanceAfter = new BN(await web3.eth.getBalance(user2))
-        
+
         fromBalanceAfter.toString().should.equal(fromBalanceBefore.sub(new BN('1')).toString())
         toBalanceAfter.toString().should.equal(toBalanceBefore.add(new BN('1')).toString())
       })
@@ -109,7 +109,21 @@ contract('WETH10', (accounts) => {
         events[0].returnValues.sender.should.equal(user1)
         events[0].returnValues.value.should.equal('1')
         events[0].returnValues.data.should.equal('0x11')
-      });
+      })
+
+      it('should not transfer to the contract address', async () => {
+        await expectRevert(weth.transfer(weth.address, 1, { from: user1 }), 'overflow')
+        await expectRevert(weth.transferFrom(user1, weth.address, 1, { from: user1 }), 'overflow')
+      })
+
+      it('should not deposit to the contract address', async () => {
+        await expectRevert(weth.depositTo(weth.address, { value: 1, from: user1 }), '!recipient')
+      })
+
+      it('should not withdraw to the contract address', async () => {
+        await expectRevert(weth.withdrawTo(weth.address, 1, { from: user1 }), '!withdraw')
+        await expectRevert(weth.withdrawFrom(user1, weth.address, 1, { from: user1 }), '!withdraw')
+      })
 
       it('should not transfer to the contract address', async () => {
         await expectRevert(weth.transfer(weth.address, 1, { from: user1 }), 'overflow');
@@ -127,7 +141,7 @@ contract('WETH10', (accounts) => {
         await weth.permit(user1, user2, '1', permitResult.deadline, permitResult.v, permitResult.r, permitResult.s)
         const allowanceAfter = await weth.allowance(user1, user2)
         allowanceAfter.toString().should.equal('1')
-      });
+      })
 
       describe('with a positive allowance', async () => {
         beforeEach(async () => {
@@ -144,15 +158,14 @@ contract('WETH10', (accounts) => {
         it('withdraws ether using withdrawFrom and allowance', async () => {
           const fromBalanceBefore = await weth.balanceOf(user1)
           const toBalanceBefore = new BN(await web3.eth.getBalance(user3))
-  
+
           await weth.withdrawFrom(user1, user3, 1, { from: user2 })
-          
+
           const fromBalanceAfter = await weth.balanceOf(user1)
           const toBalanceAfter = new BN(await web3.eth.getBalance(user3))
-          
+
           fromBalanceAfter.toString().should.equal(fromBalanceBefore.sub(new BN('1')).toString())
           toBalanceAfter.toString().should.equal(toBalanceBefore.add(new BN('1')).toString())
-  
         })
       })
     })

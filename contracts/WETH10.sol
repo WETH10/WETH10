@@ -32,7 +32,7 @@ contract WETH10 {
     /// Every successful call to {permit} increases account's nonce by one. This prevents signature from being used multiple times.
     mapping (address => uint256)                       public  nonces;
 
-    /// @dev Records number of WETH10 token that account (second) will be allowed to spend on behalf of another account (first) through {transferFrom}. 
+    /// @dev Records number of WETH10 token that account (second) will be allowed to spend on behalf of another account (first) through {transferFrom}.
     /// This is zero by default.
     /// This value changes when {approve} or {transferFrom} are called.
     mapping (address => mapping (address => uint256))  public  allowance;
@@ -93,11 +93,11 @@ contract WETH10 {
         _balanceOf[msg.sender] += msg.value;
         emit Transfer(address(0), msg.sender, msg.value);
     }
-    
+
     /// @dev `msg.value` of ether sent to contract grants `to` account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to `to` account.
     function depositTo(address to) external payable {
-        require(_balanceOf[to] + msg.value >= msg.value, "overflow");
+        require(to != address(this), "!recipient");
 
         _balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
@@ -137,7 +137,7 @@ contract WETH10 {
 
     /// @dev Burn `value` WETH10 token from caller account and withdraw matching ether to the same.
     /// Lock check provided to avoid withdrawing Ether from a flash mint
-    /// Emits {Transfer} event to reflect WETH10 token burn of `value` WETH10 token to zero address from caller account. 
+    /// Emits {Transfer} event to reflect WETH10 token burn of `value` WETH10 token to zero address from caller account.
     /// Requirements:
     ///   - caller account must have at least `value` balance of WETH10 token.
     function withdraw(uint256 value) external isUnlocked {
@@ -146,13 +146,13 @@ contract WETH10 {
         _balanceOf[msg.sender] -= value;
         (bool success, ) = msg.sender.call{value: value}("");
         require(success, "!withdraw");
-        
+
         emit Transfer(msg.sender, address(0), value);
     }
-    
+
     /// @dev Burn `value` WETH10 token from caller account and withdraw matching ether to account (`to`).
     /// Lock check provided to avoid withdrawing Ether from a flash mint
-    /// Emits {Transfer} event to reflect WETH10 token burn of `value` WETH10 token to zero address from caller account. 
+    /// Emits {Transfer} event to reflect WETH10 token burn of `value` WETH10 token to zero address from caller account.
     /// Requirements:
     ///   - caller account must have at least `value` balance of WETH10 token.
     function withdrawTo(address to, uint256 value) external isUnlocked {
@@ -161,10 +161,10 @@ contract WETH10 {
         _balanceOf[msg.sender] -= value;
         (bool success, ) = to.call{value: value}("");
         require(success, "!withdraw");
-        
+
         emit Transfer(msg.sender, address(0), value);
     }
-    
+
     /// @dev Burn `value` WETH10 token from account (`from`) and withdraw matching ether to account (`to`).
     /// Lock check provided to avoid withdrawing Ether from a flash mint
     /// Emits {Approval} event to reflect reduced allowance `value` for caller account to spend from account (`from`), unless allowance is set to `type(uint256).max`
@@ -187,10 +187,10 @@ contract WETH10 {
         _balanceOf[from] -= value;
         (bool success, ) = to.call{value: value}("");
         require(success, "!withdraw");
-        
+
         emit Transfer(from, address(0), value);
     }
-    
+
     /// @dev Internal function to execute the `approve logic.
     function _approve(address owner, address spender, uint256 value) internal {
         allowance[owner][spender] = value;
@@ -203,8 +203,8 @@ contract WETH10 {
     /// Requirements:
     ///   - allowance reset required to mitigate race condition - see https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729.
     function approve(address spender, uint256 value) external returns (bool) {
-        require(value == 0 || allowance[msg.sender][spender] == 0, "!reset"); 
-        _approve(msg.sender, spender, value); 
+        require(value == 0 || allowance[msg.sender][spender] == 0, "!reset");
+        _approve(msg.sender, spender, value);
         return true;
     }
 
@@ -240,7 +240,7 @@ contract WETH10 {
 
         _approve(owner, spender, value);
     }
-    
+
     /// @dev Moves `value` WETH10 token from caller's account to account (`to`).
     /// Returns boolean value indicating whether operation succeeded.
     /// Emits {Transfer} event.
@@ -257,8 +257,8 @@ contract WETH10 {
 
         return true;
     }
-    
-    /// @dev Moves `value` WETH10 token from account (`from`) to account (`to`) using allowance mechanism. 
+
+    /// @dev Moves `value` WETH10 token from account (`from`) to account (`to`) using allowance mechanism.
     /// `value` is then deducted from caller account's allowance, unless set to `type(uint256).max`.
     /// Returns boolean value indicating whether operation succeeded.
     ///
@@ -266,7 +266,7 @@ contract WETH10 {
     /// Requirements:
     /// - owner account (`from`) must have at least `value` WETH10 token and transfer to account (`to`) cannot cause overflow.
     /// - caller account must have at least `value` allowance from account (`from`).
-    function transferFrom(address from, address to, uint256 value) public returns (bool) {
+    function transferFrom(address from, address to, uint256 value) external returns (bool) {
         require(_balanceOf[from] >= value, "!balance");
         require(_balanceOf[to] + value >= value, "overflow");
 
@@ -294,7 +294,13 @@ contract WETH10 {
     ///   - caller account must have at least `value` WETH10 token and transfer to account (`to`) cannot cause overflow.
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function transferAndCall(address to, uint value, bytes calldata data) external returns (bool success) {
-        transferFrom(msg.sender, to, value);
+        require(_balanceOf[msg.sender] >= value, "!balance");
+        require(_balanceOf[to] + value >= value, "overflow");
+
+        _balanceOf[msg.sender] -= value;
+        _balanceOf[to] += value;
+
+        emit Transfer(msg.sender, to, value);
 
         ERC677Receiver(to).onTokenTransfer(msg.sender, value, data);
         return true;

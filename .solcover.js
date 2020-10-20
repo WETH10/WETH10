@@ -1,5 +1,3 @@
 module.exports = {
-    skipFiles: [
-        'Migrations.sol'
-    ]
-  };
+  skipFiles: ['Migrations.sol'],
+}

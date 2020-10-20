@@ -9,7 +9,7 @@ interface FlashMintableLike {
     function withdrawFrom(address, address, uint256) external;
 }
 
-contract FlashMinter {
+contract TestFlashMinter {
     enum Action {BALANCE, FLASH, WITHDRAW, WITHDRAW_TO, WITHDRAW_FROM}
 
     uint256 public flashBalance;
