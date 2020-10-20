@@ -190,12 +190,6 @@ contract WETH10 {
         
         emit Transfer(from, address(0), value);
     }
-    
-    /// @dev Internal function to execute the `approve logic.
-    function _approve(address owner, address spender, uint256 value) internal {
-        allowance[owner][spender] = value;
-        emit Approval(owner, spender, value);
-    }
 
     /// @dev Sets `value` as allowance of `spender` account over caller account's WETH10 token.
     /// Returns boolean value indicating whether operation succeeded.
@@ -204,7 +198,8 @@ contract WETH10 {
     ///   - allowance reset required to mitigate race condition - see https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729.
     function approve(address spender, uint256 value) external returns (bool) {
         require(value == 0 || allowance[msg.sender][spender] == 0, "!reset"); 
-        _approve(msg.sender, spender, value); 
+        allowance[msg.sender][spender] = value;
+        emit Approval(msg.sender, spender, value);
         return true;
     }
 
@@ -238,7 +233,8 @@ contract WETH10 {
         address signer = ecrecover(hash, v, r, s);
         require(signer != address(0) && signer == owner, "!signer");
 
-        _approve(owner, spender, value);
+        allowance[owner][spender] = value;
+        emit Approval(owner, spender, value);
     }
     
     /// @dev Moves `value` WETH10 token from caller's account to account (`to`).
