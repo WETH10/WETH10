@@ -255,7 +255,7 @@ contract WETH10 {
     /// Requirements:
     /// - owner account (`from`) must have at least `value` WETH10 token and transfer to account (`to`) cannot cause overflow.
     /// - caller account must have at least `value` allowance from account (`from`).
-    function transferFrom(address from, address to, uint256 value) public returns (bool) {
+    function transferFrom(address from, address to, uint256 value) external returns (bool) {
         require(balanceOf[from] >= value, "!balance");
         require(balanceOf[to] + value >= value, "overflow");
 
@@ -283,7 +283,13 @@ contract WETH10 {
     ///   - caller account must have at least `value` WETH10 token and transfer to account (`to`) cannot cause overflow.
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function transferAndCall(address to, uint value, bytes calldata data) external returns (bool success) {
-        transferFrom(msg.sender, to, value);
+        require(balanceOf[msg.sender] >= value, "!balance");
+        require(balanceOf[to] + value >= value, "overflow");
+
+        balanceOf[msg.sender] -= value;
+        balanceOf[to] += value;
+
+        emit Transfer(msg.sender, to, value);
 
         ERC677Receiver(to).onTokenTransfer(msg.sender, value, data);
         return true;
