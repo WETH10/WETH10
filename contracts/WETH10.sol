@@ -296,11 +296,11 @@ contract WETH10 {
     ///   - caller account must have at least `value` WETH10 token and transfer to account (`to`) cannot cause overflow.
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function transferAndCall(address to, uint value, bytes calldata data) external returns (bool success) {
-        require(balanceOf[msg.sender] >= value, "!balance");
-        require(balanceOf[to] + value >= value, "overflow");
+        require(_balanceOf[msg.sender] >= value, "!balance");
+        require(_balanceOf[to] + value >= value, "overflow");
 
-        balanceOf[msg.sender] -= value;
-        balanceOf[to] += value;
+        _balanceOf[msg.sender] -= value;
+        _balanceOf[to] += value;
 
         emit Transfer(msg.sender, to, value);
 
