@@ -97,8 +97,7 @@ contract WETH10 {
     /// @dev `msg.value` of ether sent to contract grants `to` account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to `to` account.
     function depositTo(address to) external payable {
-        require(_balanceOf[to] + msg.value >= msg.value, "overflow");
-
+        require(to != address(this), "!recipient");
         _balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
     }
@@ -112,6 +111,7 @@ contract WETH10 {
     ///   - caller account must have at least `value` WETH10 token and transfer to account (`to`) cannot cause overflow.
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function depositToAndCall(address to, bytes calldata data) external payable returns (bool success) {
+        require(to != address(this), "!recipient");
         _balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
 
@@ -126,6 +126,7 @@ contract WETH10 {
     function flashMint(uint256 value, bytes calldata data) external lock {
         _balanceOf[msg.sender] += value;
         require(_balanceOf[msg.sender] >= value, "overflow");
+
         emit Transfer(address(0), msg.sender, value);
 
         FlashMinterLike(msg.sender).executeOnFlashMint(value, data);
@@ -189,12 +190,6 @@ contract WETH10 {
         require(success, "!withdraw");
 
         emit Transfer(from, address(0), value);
-    }
-
-    /// @dev Internal function to execute the `approve logic.
-    function _approve(address owner, address spender, uint256 value) internal {
-        allowance[owner][spender] = value;
-        emit Approval(owner, spender, value);
     }
 
     /// @dev Sets `value` as allowance of `spender` account over caller account's WETH10 token.
@@ -268,7 +263,7 @@ contract WETH10 {
     /// Requirements:
     /// - owner account (`from`) must have at least `value` WETH10 token and transfer to account (`to`) cannot cause overflow.
     /// - caller account must have at least `value` allowance from account (`from`).
-    function transferFrom(address from, address to, uint256 value) public returns (bool) {
+    function transferFrom(address from, address to, uint256 value) external returns (bool) {
         require(_balanceOf[from] >= value, "!balance");
         require(_balanceOf[to] + value >= value, "overflow");
 

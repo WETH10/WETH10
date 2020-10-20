@@ -41,6 +41,14 @@ contract('WETH10', (accounts) => {
       balanceAfter.toString().should.equal(balanceBefore.add(new BN('1')).toString())
     })
 
+    it('should not depositTo to the contract address', async () => {
+      await expectRevert(weth.depositTo(weth.address, { value: 1, from: user1 }), '!recipient')
+    })
+
+    it('should not depositToAndCall to the contract address', async () => {
+      await expectRevert(weth.depositToAndCall(weth.address, '0x11', { from: user1, value: 1 }), '!recipient')
+    })
+
     it('deposits with depositToAndCall', async () => {
       const receiver = await TestERC677Receiver.new()
       await weth.depositToAndCall(receiver.address, '0x11', { from: user1, value: 1 })
@@ -84,6 +92,11 @@ contract('WETH10', (accounts) => {
         toBalanceAfter.toString().should.equal(toBalanceBefore.add(new BN('1')).toString())
       })
 
+      it('should not withdraw to the contract address', async () => {
+        await expectRevert(weth.withdrawTo(weth.address, 1, { from: user1 }), '!withdraw')
+        await expectRevert(weth.withdrawFrom(user1, weth.address, 1, { from: user1 }), '!withdraw')
+      })
+
       it('transfers ether', async () => {
         const balanceBefore = await weth.balanceOf(user2)
         await weth.transfer(user2, 1, { from: user1 })
@@ -112,8 +125,9 @@ contract('WETH10', (accounts) => {
       })
 
       it('should not transfer to the contract address', async () => {
-        await expectRevert(weth.transfer(weth.address, 1, { from: user1 }), 'overflow');
-      });
+        await expectRevert(weth.transfer(weth.address, 1, { from: user1 }), 'overflow')
+        await expectRevert(weth.transferFrom(user1, weth.address, 1, { from: user1 }), 'overflow')
+      })
 
       it('approves to increase allowance', async () => {
         const allowanceBefore = await weth.allowance(user1, user2)
