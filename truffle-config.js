@@ -19,13 +19,13 @@
  */
 
 const path = require('path')
-const fs = require('fs');
-const HDWalletProvider = require("@truffle/hdwallet-provider");
+const fs = require('fs')
+const HDWalletProvider = require('@truffle/hdwallet-provider')
 
-function getProvider(network){
-    const mnemonic = fs.readFileSync(path.resolve(__dirname, ".secret")).toString().trim();
-    const infuraKey = fs.readFileSync(path.resolve(__dirname, ".infuraKey")).toString().trim();
-    return new HDWalletProvider(mnemonic, `https://${network}.infura.io/v3/${infuraKey}`)
+function getProvider(network) {
+  const mnemonic = fs.readFileSync(path.resolve(__dirname, '.secret')).toString().trim()
+  const infuraKey = fs.readFileSync(path.resolve(__dirname, '.infuraKey')).toString().trim()
+  return new HDWalletProvider(mnemonic, `https://${network}.infura.io/v3/${infuraKey}`)
 }
 
 module.exports = {
@@ -53,88 +53,88 @@ module.exports = {
     // },
 
     development: {
-      host: "127.0.0.1",     // Localhost (default: none)
-      port: 8545,            // Standard Ethereum port (default: none)
-      network_id: "*",       // Any network (default: none)
-      gas: 0x6691b7
+      host: '127.0.0.1', // Localhost (default: none)
+      port: 8545, // Standard Ethereum port (default: none)
+      network_id: '*', // Any network (default: none)
+      gas: 0x6691b7,
     },
-
 
     // Another network with more advanced options...
     // advanced: {
-      // port: 8777,             // Custom port
-      // network_id: 1342,       // Custom network
-      // gas: 8500000,           // Gas sent with each transaction (default: ~6700000)
-      // gasPrice: 20000000000,  // 20 gwei (in wei) (default: 100 gwei)
-      // from: <address>,        // Account to send txs from (default: accounts[0])
-      // websockets: true        // Enable EventEmitter interface for web3 (default: false)
+    // port: 8777,             // Custom port
+    // network_id: 1342,       // Custom network
+    // gas: 8500000,           // Gas sent with each transaction (default: ~6700000)
+    // gasPrice: 20000000000,  // 20 gwei (in wei) (default: 100 gwei)
+    // from: <address>,        // Account to send txs from (default: accounts[0])
+    // websockets: true        // Enable EventEmitter interface for web3 (default: false)
     // },
 
     // Useful for deploying to a public network.
     // NB: It's important to wrap the provider as a function.
 
     kovan: {
-      provider: () => getProvider("kovan"),
-      network_id: 42,         // Kovan's id
-      confirmations: 2,       // # of confs to wait between deployments. (default: 0)
-      timeoutBlocks: 200,     // # of blocks before a deployment times out  (minimum/default: 50)
-      gasPrice: 10000000000,  // 10 gwei
-      skipDryRun: false       // Skip dry run before migrations? (default: false for public nets )
+      provider: () => getProvider('kovan'),
+      network_id: 42, // Kovan's id
+      confirmations: 2, // # of confs to wait between deployments. (default: 0)
+      timeoutBlocks: 200, // # of blocks before a deployment times out  (minimum/default: 50)
+      gasPrice: 10000000000, // 10 gwei
+      skipDryRun: false, // Skip dry run before migrations? (default: false for public nets )
     },
 
     goerli: {
-      provider: () => getProvider("goerli"),
-      network_id: 5,          // Goerli's id
-      confirmations: 2,       // # of confs to wait between deployments. (default: 0)
-      timeoutBlocks: 200,     // # of blocks before a deployment times out  (minimum/default: 50)
-      gasPrice: 10000000000,  // 10 gwei
-      skipDryRun: false       // Skip dry run before migrations? (default: false for public nets )
+      provider: () => getProvider('goerli'),
+      network_id: 5, // Goerli's id
+      confirmations: 2, // # of confs to wait between deployments. (default: 0)
+      timeoutBlocks: 200, // # of blocks before a deployment times out  (minimum/default: 50)
+      gasPrice: 10000000000, // 10 gwei
+      skipDryRun: false, // Skip dry run before migrations? (default: false for public nets )
     },
 
     rinkeby: {
-      provider: () => getProvider("rinkeby"),
-      network_id: 4,          // Rinkeby's id
-      confirmations: 0,       // # of confs to wait between deployments. (default: 0)
-      timeoutBlocks: 200,     // # of blocks before a deployment times out  (minimum/default: 50)
-      gasPrice: 10000000000,  // 10 gwei
-      skipDryRun: false       // Skip dry run before migrations? (default: false for public nets )
+      provider: () => getProvider('rinkeby'),
+      network_id: 4, // Rinkeby's id
+      confirmations: 0, // # of confs to wait between deployments. (default: 0)
+      timeoutBlocks: 200, // # of blocks before a deployment times out  (minimum/default: 50)
+      gasPrice: 10000000000, // 10 gwei
+      skipDryRun: false, // Skip dry run before migrations? (default: false for public nets )
     },
 
     ropsten: {
-      provider: () => getProvider("ropsten"),
-      network_id: 3,          // Ropsten's id
-      gas: 5500000,           // Ropsten has a lower block limit than mainnet
-      confirmations: 2,       // # of confs to wait between deployments. (default: 0)
-      timeoutBlocks: 200,     // # of blocks before a deployment times out  (minimum/default: 50)
-      gasPrice: 10000000000,  // 10 gwei
-      skipDryRun: false       // Skip dry run before migrations? (default: false for public nets )
+      provider: () => getProvider('ropsten'),
+      network_id: 3, // Ropsten's id
+      gas: 5500000, // Ropsten has a lower block limit than mainnet
+      confirmations: 2, // # of confs to wait between deployments. (default: 0)
+      timeoutBlocks: 200, // # of blocks before a deployment times out  (minimum/default: 50)
+      gasPrice: 10000000000, // 10 gwei
+      skipDryRun: false, // Skip dry run before migrations? (default: false for public nets )
     },
 
     // Useful for private networks
     // private: {
-      // provider: () => new HDWalletProvider(mnemonic, `https://network.io`),
-      // network_id: 2111,   // This network is yours, in the cloud.
-      // production: true    // Treats this network as if it was a public net. (default: false)
+    // provider: () => new HDWalletProvider(mnemonic, `https://network.io`),
+    // network_id: 2111,   // This network is yours, in the cloud.
+    // production: true    // Treats this network as if it was a public net. (default: false)
     // }
   },
 
   // Set default mocha options here, use special reporters etc.
   mocha: {
     // timeout: 100000
-    reporter: 'eth-gas-reporter'
+    reporter: 'eth-gas-reporter',
   },
 
   // Configure your compilers
   compilers: {
     solc: {
-      version: "0.7.0",
-      settings: {          // See the solidity docs for advice about optimization and evmVersion
+      version: '0.7.0',
+      settings: {
+        // See the solidity docs for advice about optimization and evmVersion
         optimizer: {
           enabled: true,
-          runs: 200
+          runs: 200,
         },
-      //  evmVersion: "byzantium"
-      }
-    }
-  }
+        //  evmVersion: "byzantium"
+      },
+    },
+  },
 }
