@@ -192,12 +192,6 @@ contract WETH10 {
         emit Transfer(from, address(0), value);
     }
 
-    /// @dev Internal function to execute the `approve logic.
-    function _approve(address owner, address spender, uint256 value) internal {
-        allowance[owner][spender] = value;
-        emit Approval(owner, spender, value);
-    }
-
     /// @dev Sets `value` as allowance of `spender` account over caller account's WETH10 token.
     /// Returns boolean value indicating whether operation succeeded.
     /// Emits {Approval} event.
