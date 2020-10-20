@@ -232,7 +232,7 @@ contract WETH10 {
                 hashStruct));
 
         address signer = ecrecover(hash, v, r, s);
-        require(signer != address(0) && signer == owner, "!signer");
+        require(signer != address(0) && signer == owner, "!permit");
 
         allowance[owner][spender] = value;
         emit Approval(owner, spender, value);

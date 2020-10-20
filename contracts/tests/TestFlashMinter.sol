@@ -7,10 +7,11 @@ interface FlashMintableLike {
     function withdraw(uint256) external;
     function withdrawTo(address, uint256) external;
     function withdrawFrom(address, address, uint256) external;
+    function transfer(address, uint256) external;
 }
 
 contract TestFlashMinter {
-    enum Action {BALANCE, FLASH, WITHDRAW, WITHDRAW_TO, WITHDRAW_FROM}
+    enum Action {BALANCE, FLASH, WITHDRAW, WITHDRAW_TO, WITHDRAW_FROM, OVERSPEND}
 
     uint256 public flashBalance;
     uint256 public flashValue;
@@ -32,6 +33,8 @@ contract TestFlashMinter {
             FlashMintableLike(msg.sender).withdrawTo(target, value);
         } else if (action == Action.WITHDRAW_FROM) {
             FlashMintableLike(msg.sender).withdrawFrom(target, target, value);
+        } else if (action == Action.OVERSPEND) {
+            FlashMintableLike(msg.sender).transfer(address(0), 1);
         }
     }
 
@@ -58,6 +61,11 @@ contract TestFlashMinter {
 
     function flashMintAndWithdrawFrom(address target, uint256 value) public {
         bytes memory data = abi.encode(Action.WITHDRAW_FROM, msg.sender); // Here msg.sender is the user, and target is the weth contract
+        FlashMintableLike(target).flashMint(value, data);
+    }
+
+    function flashMintAndOverspend(address target, uint256 value) public {
+        bytes memory data = abi.encode(Action.OVERSPEND, msg.sender); // Here msg.sender is the user, and target is the weth contract
         FlashMintableLike(target).flashMint(value, data);
     }
 }

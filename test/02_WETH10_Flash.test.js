@@ -42,4 +42,8 @@ contract('WETH10 - Flash Minting', (accounts) => {
   it('cannot withdrawFrom during a flash mint', async () => {
     await expectRevert(flash.flashMintAndWithdrawFrom(weth.address, 1, { from: deployer }), 'locked')
   })
+
+  it('needs to return funds after a flash mint', async () => {
+    await expectRevert(flash.flashMintAndOverspend(weth.address, 1, { from: deployer }), '!balance')
+  })
 })

@@ -6,6 +6,8 @@ const { BN, expectRevert } = require('@openzeppelin/test-helpers')
 const { web3 } = require('@openzeppelin/test-helpers/src/setup')
 require('chai').use(require('chai-as-promised')).should()
 
+const MAX = "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+
 contract('WETH10', (accounts) => {
   const [deployer, user1, user2, user3] = accounts
   let weth
@@ -97,6 +99,12 @@ contract('WETH10', (accounts) => {
         await expectRevert(weth.withdrawFrom(user1, weth.address, 1, { from: user1 }), '!withdraw')
       })
 
+      it('should not withdraw beyond balance', async () => {
+        await expectRevert(weth.withdraw(100, { from: user1 }), '!balance')
+        await expectRevert(weth.withdrawTo(weth.address, 100, { from: user1 }), '!balance')
+        await expectRevert(weth.withdrawFrom(user1, weth.address, 100, { from: user1 }), '!balance')
+      })
+
       it('transfers ether', async () => {
         const balanceBefore = await weth.balanceOf(user2)
         await weth.transfer(user2, 1, { from: user1 })
@@ -127,6 +135,14 @@ contract('WETH10', (accounts) => {
       it('should not transfer to the contract address', async () => {
         await expectRevert(weth.transfer(weth.address, 1, { from: user1 }), 'overflow')
         await expectRevert(weth.transferFrom(user1, weth.address, 1, { from: user1 }), 'overflow')
+        await expectRevert(weth.transferAndCall(weth.address, 1, '0x11', { from: user1 }), 'overflow')
+      })
+
+      it('should not transfer beyond balance', async () => {
+        await expectRevert(weth.transfer(weth.address, 100, { from: user1 }), '!balance')
+        await expectRevert(weth.transferFrom(user1, weth.address, 100, { from: user1 }), '!balance')
+        const receiver = await TestERC677Receiver.new()
+        await expectRevert(weth.transferAndCall(receiver.address, 100, '0x11', { from: user1 }), '!balance')
       })
 
       it('approves to increase allowance', async () => {
@@ -143,9 +159,23 @@ contract('WETH10', (accounts) => {
         allowanceAfter.toString().should.equal('1')
       })
 
+      it('does not approve with expired permit', async () => {
+        const permitResult = await signERC2612Permit(web3.currentProvider, weth.address, user1, user2, '1')
+        await expectRevert(weth.permit(user1, user2, '1', 0, permitResult.v, permitResult.r, permitResult.s), 'expired')
+      })
+
+      it('does not approve with invalid permit', async () => {
+        const permitResult = await signERC2612Permit(web3.currentProvider, weth.address, user1, user2, '1')
+        await expectRevert(weth.permit(user1, user2, '2', permitResult.deadline, permitResult.v, permitResult.r, permitResult.s), '!permit')
+      })
+
       describe('with a positive allowance', async () => {
         beforeEach(async () => {
           await weth.approve(user2, 1, { from: user1 })
+        })
+
+        it('can not approve without a reset', async () => {
+          await expectRevert(weth.approve(user2, 1, { from: user1 }), '!reset')
         })
 
         it('transfers ether using transferFrom and allowance', async () => {
@@ -155,6 +185,10 @@ contract('WETH10', (accounts) => {
           balanceAfter.toString().should.equal(balanceBefore.add(new BN('1')).toString())
         })
 
+        it('should not transfer beyond allowance', async () => {
+          await expectRevert(weth.transferFrom(user1, user2, 2, { from: user2 }), '!allowance')
+        })
+  
         it('withdraws ether using withdrawFrom and allowance', async () => {
           const fromBalanceBefore = await weth.balanceOf(user1)
           const toBalanceBefore = new BN(await web3.eth.getBalance(user3))
@@ -166,6 +200,28 @@ contract('WETH10', (accounts) => {
 
           fromBalanceAfter.toString().should.equal(fromBalanceBefore.sub(new BN('1')).toString())
           toBalanceAfter.toString().should.equal(toBalanceBefore.add(new BN('1')).toString())
+        })
+
+        it('should not transfer beyond allowance', async () => {
+          await expectRevert(weth.withdrawFrom(user1, user3, 2, { from: user2 }), '!allowance')
+        })
+      })
+
+      describe('with a maximum allowance', async () => {
+        beforeEach(async () => {
+          await weth.approve(user2, MAX, { from: user1 })
+        })
+
+        it('does not decrease allowance using transferFrom', async () => {
+          await weth.transferFrom(user1, user2, 1, { from: user2 })
+          const allowanceAfter = await weth.allowance(user1, user2)
+          allowanceAfter.toString().should.equal(MAX)
+        })
+
+        it('does not decrease allowance using withdrawFrom', async () => {
+          await weth.withdrawFrom(user1, user2, 1, { from: user2 })
+          const allowanceAfter = await weth.allowance(user1, user2)
+          allowanceAfter.toString().should.equal(MAX)
         })
       })
     })
