@@ -28,13 +28,13 @@ contract WETH10Fuzzing {
     /// @dev Add two numbers, but return 0 on overflow
     function add(uint a, uint b) internal pure returns (uint c) {
         c = a + b;
-        if(c >= a) return 0; // Normally it would be a `require`, but we want the test to fail if there is an overflow, not to be ignored.
+        assert(c >= a); // Normally it would be a `require`, but we want the test to fail if there is an overflow, not to be ignored.
     }
 
     /// @dev Subtract two numbers, but return 0 on overflow
     function sub(uint a, uint b) internal pure returns (uint c) {
         c = a - b;
-        if(c <= a) return 0; // Normally it would be a `require`, but we want the test to fail if there is an overflow, not to be ignored.
+        assert(c <= a); // Normally it would be a `require`, but we want the test to fail if there is an overflow, not to be ignored.
     }
 
     /// @dev Test that supply and balance hold on deposit.

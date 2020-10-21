@@ -3,6 +3,7 @@
 // Adapted by Ethereum Community 2020
 pragma solidity 0.7.0;
 
+
 interface ERC677Receiver {
     function onTokenTransfer(address, uint, bytes calldata) external;
 }
@@ -10,7 +11,6 @@ interface ERC677Receiver {
 interface FlashMinterLike {
     function executeOnFlashMint(uint, bytes calldata) external;
 }
-
 
 contract WETH10 {
     string public constant name = "Wrapped Ether";
@@ -213,7 +213,7 @@ contract WETH10 {
                 hashStruct));
 
         address signer = ecrecover(hash, v, r, s);
-        require(signer != address(0) && signer == owner, "!signer");
+        require(signer != address(0) && signer == owner, "!permit");
 
         allowance[owner][spender] = value;
         emit Approval(owner, spender, value);

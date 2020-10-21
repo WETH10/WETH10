@@ -4,13 +4,13 @@ pragma solidity 0.7.0;
 interface FlashMintableLike {
     function flashMint(uint256, bytes calldata) external;
     function balanceOf(address) external returns (uint256);
+    function deposit() external payable;
     function withdraw(uint256) external;
     function transfer(address, uint256) external;
-    function deposit() payable external;
 }
 
 contract TestFlashMinter {
-    enum Action {NORMAL, STEAL, WITHDRAW, REENTER}
+    enum Action {NORMAL, STEAL, WITHDRAW, REENTER, OVERSPEND}
 
     uint256 public flashBalance;
     uint256 public flashValue;
@@ -32,6 +32,8 @@ contract TestFlashMinter {
             FlashMintableLike(msg.sender).transfer(address(1), value);
         } else if (action == Action.REENTER) {
             flashMint(msg.sender, value * 2);
+        } else if (action == Action.OVERSPEND) {
+            FlashMintableLike(msg.sender).transfer(address(0), 1);
         }
     }
 
@@ -56,6 +58,11 @@ contract TestFlashMinter {
     function flashMintAndReenter(address target, uint256 value) public {
         // Use this to pack arbitrary data to `executeOnFlashMint`
         bytes memory data = abi.encode(Action.REENTER, msg.sender); // Here msg.sender is the user, and target is the weth contract
+        FlashMintableLike(target).flashMint(value, data);
+    }
+
+    function flashMintAndOverspend(address target, uint256 value) public {
+        bytes memory data = abi.encode(Action.OVERSPEND, msg.sender); // Here msg.sender is the user, and target is the weth contract
         FlashMintableLike(target).flashMint(value, data);
     }
 }
