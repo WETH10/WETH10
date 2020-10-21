@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.7.0;
 import "../WETH10.sol";
-import "@nomiclabs/buidler/console.sol";
 
 /// @dev A contract that will receive weth, and allows for it to be retrieved.
 contract MockHolder {
