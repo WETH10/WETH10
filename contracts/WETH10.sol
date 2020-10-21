@@ -37,9 +37,6 @@ contract WETH10 {
     /// This value changes when {approve} or {transferFrom} are called.
     mapping (address => mapping (address => uint256))  public  allowance;
 
-    /// @dev Internal WETH10 value to disallow withdrawals during flash minting.
-    uint256 private unlocked = 1;
-
     constructor() {
         uint256 chainId;
         assembly {chainId := chainid()}
@@ -53,20 +50,6 @@ contract WETH10 {
 
         // Trick to prevent transfers to the contract address without adding additional gas costs
         _balanceOf[address(this)] = type(uint256).max;
-    }
-
-    /// @dev Disallow withdrawals or (reentrant) flash minting.
-    modifier lock() {
-        require(unlocked == 1, "locked");
-        unlocked = 0;
-        _;
-        unlocked = 1;
-    }
-
-    /// @dev Return whether the contract is locked for withdrawals and flash minting
-    modifier isUnlocked() {
-        require(unlocked == 1, "locked");
-        _;
     }
 
     /// @dev Returns amount of WETH10 token in existence based on deposited ether.
@@ -121,9 +104,8 @@ contract WETH10 {
 
     /// @dev Flash mints WETH10 token and burns from caller account.
     /// Arbitrary data can be passed as a bytes calldata parameter.
-    /// Lock check provided for reentrancy guard.
     /// Emits two {Transfer} events for minting and burning of the flash minted amount.
-    function flashMint(uint256 value, bytes calldata data) external lock {
+    function flashMint(uint256 value, bytes calldata data) external {
         _balanceOf[msg.sender] += value;
         require(_balanceOf[msg.sender] >= value, "overflow");
 
@@ -137,14 +119,14 @@ contract WETH10 {
     }
 
     /// @dev Burn `value` WETH10 token from caller account and withdraw matching ether to the same.
-    /// Lock check provided to avoid withdrawing Ether from a flash mint
-    /// Emits {Transfer} event to reflect WETH10 token burn of `value` WETH10 token to zero address from caller account.
+    /// Emits {Transfer} event to reflect WETH10 token burn of `value` WETH10 token to zero address from caller account. 
     /// Requirements:
     ///   - caller account must have at least `value` balance of WETH10 token.
-    function withdraw(uint256 value) external isUnlocked {
+    function withdraw(uint256 value) external {
         require(_balanceOf[msg.sender] >= value, "!balance");
         
         _balanceOf[msg.sender] -= value;
+
         (bool success, ) = msg.sender.call{value: value}("");
         require(success, "!withdraw");
 
@@ -152,14 +134,14 @@ contract WETH10 {
     }
 
     /// @dev Burn `value` WETH10 token from caller account and withdraw matching ether to account (`to`).
-    /// Lock check provided to avoid withdrawing Ether from a flash mint
     /// Emits {Transfer} event to reflect WETH10 token burn of `value` WETH10 token to zero address from caller account.
     /// Requirements:
     ///   - caller account must have at least `value` balance of WETH10 token.
-    function withdrawTo(address to, uint256 value) external isUnlocked {
+    function withdrawTo(address to, uint256 value) external {
         require(_balanceOf[msg.sender] >= value, "!balance");
         
         _balanceOf[msg.sender] -= value;
+
         (bool success, ) = to.call{value: value}("");
         require(success, "!withdraw");
 
@@ -167,13 +149,12 @@ contract WETH10 {
     }
 
     /// @dev Burn `value` WETH10 token from account (`from`) and withdraw matching ether to account (`to`).
-    /// Lock check provided to avoid withdrawing Ether from a flash mint
     /// Emits {Approval} event to reflect reduced allowance `value` for caller account to spend from account (`from`), unless allowance is set to `type(uint256).max`
     /// Emits {Transfer} event to reflect WETH10 token burn of `value` to zero address from account (`from`).
     /// Requirements:
     ///   - `from` account must have at least `value` balance of WETH10 token.
     ///   - `from` account must have approved caller to spend at least `value` of WETH10 token, unless `from` and caller are the same account.
-    function withdrawFrom(address from, address to, uint256 value) external isUnlocked {
+    function withdrawFrom(address from, address to, uint256 value) external {
         require(_balanceOf[from] >= value, "!balance");
         
         if (from != msg.sender) {
