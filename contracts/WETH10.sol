@@ -12,6 +12,9 @@ interface FlashMinterLike {
     function executeOnFlashMint(uint, bytes calldata) external;
 }
 
+/// @dev WETH10 is an Ether ERC20 wrapper. You can `deposit` Ether and obtain Wrapped Ether which can then be operated as an ERC20 token. You can
+/// `withdraw` Ether from WETH10, which will burn Wrapped Ether in your wallet. The amount of Wrapped Ether in any wallet is always identical to the
+/// balance of Ether deposited minus the Ether withdrawn with that specific wallet.
 contract WETH10 {
     string public constant name = "Wrapped Ether";
     string public constant symbol = "WETH";
@@ -22,20 +25,21 @@ contract WETH10 {
     /// @dev Emitted when allowance of `spender` for `owner` account WETH10 token is set by call to {approve}. `value` is new allowance.
     event  Approval(address indexed owner, address indexed spender, uint256 value);
 
-    /// @dev Emitted when `value` WETH10 token are moved from account (`from`) to account (`to`). Event also tracks mint and burn of WETH10 token through deposit and withdrawal.
+    /// @dev Emitted when `value` WETH10 token are moved from account (`from`) to account (`to`). Event also tracks mint and burn of WETH10 token
+    /// through deposit and withdrawal.
     event  Transfer(address indexed from, address indexed to, uint256 value);
 
     /// @dev Records amount of WETH10 token owned by account.
-    mapping (address => uint256)                       private  _balanceOf;
+    mapping (address => uint256) private _balanceOf;
 
     /// @dev Records current ERC2612 nonce for account. This value must be included whenever signature is generated for {permit}.
     /// Every successful call to {permit} increases account's nonce by one. This prevents signature from being used multiple times.
-    mapping (address => uint256)                       public  nonces;
+    mapping (address => uint256) public nonces;
 
     /// @dev Records number of WETH10 token that account (second) will be allowed to spend on behalf of another account (first) through {transferFrom}.
     /// This is zero by default.
     /// This value changes when {approve} or {transferFrom} are called.
-    mapping (address => mapping (address => uint256))  public  allowance;
+    mapping (address => mapping (address => uint256)) public allowance;
 
     constructor() {
         uint256 chainId;
@@ -53,6 +57,7 @@ contract WETH10 {
     }
 
     /// @dev Returns amount of WETH10 token in existence based on deposited ether.
+    /// Note: This can be permanently tricked by self-destructing a contract that sends Ether to this contract.
     function totalSupply() external view returns (uint256) {
         return address(this).balance;
     }
@@ -64,6 +69,7 @@ contract WETH10 {
 
     /// @dev Fallback, `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
+    /// Operations that end with this contract sending Ether to itself are prohibited.
     receive() external payable {
         require(msg.sender != address(this));
         _balanceOf[msg.sender] += msg.value;
@@ -73,15 +79,15 @@ contract WETH10 {
     /// @dev `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
     function deposit() external payable {
-        _balanceOf[msg.sender] += msg.value;
+        _balanceOf[msg.sender] += msg.value;                       // Can never overflow, as this depends on real Ether supply
         emit Transfer(address(0), msg.sender, msg.value);
     }
 
     /// @dev `msg.value` of ether sent to contract grants `to` account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to `to` account.
     function depositTo(address to) external payable {
-        require(to != address(this), "!recipient");
-        _balanceOf[to] += msg.value;
+        require(to != address(this), "!recipient");                // This contract is not allowed to hold Wrapped Ether
+        _balanceOf[to] += msg.value;                               // Can never overflow, as this depends on real Ether supply
         emit Transfer(address(0), to, msg.value);
     }
 
@@ -94,8 +100,8 @@ contract WETH10 {
     ///   - caller account must have at least `value` WETH10 token and transfer to account (`to`) cannot cause overflow.
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function depositToAndCall(address to, bytes calldata data) external payable returns (bool success) {
-        require(to != address(this), "!recipient");
-        _balanceOf[to] += msg.value;
+        require(to != address(this), "!recipient");                // This contract is not allowed to hold Wrapped Ether
+        _balanceOf[to] += msg.value;                               // Can never overflow, as this depends on real Ether supply
         emit Transfer(address(0), to, msg.value);
 
         ERC677Receiver(to).onTokenTransfer(msg.sender, msg.value, data);
@@ -142,14 +148,15 @@ contract WETH10 {
         
         _balanceOf[msg.sender] -= value;
 
-        (bool success, ) = to.call{value: value}("");
+        (bool success, ) = to.call{value: value}("");              // Withdrawals to this contract are prohibited in `receive()`
         require(success, "!withdraw");
 
         emit Transfer(msg.sender, address(0), value);
     }
 
     /// @dev Burn `value` WETH10 token from account (`from`) and withdraw matching ether to account (`to`).
-    /// Emits {Approval} event to reflect reduced allowance `value` for caller account to spend from account (`from`), unless allowance is set to `type(uint256).max`
+    /// Emits {Approval} event to reflect reduced allowance `value` for caller account to spend from account (`from`),
+    /// unless allowance is set to `type(uint256).max`
     /// Emits {Transfer} event to reflect WETH10 token burn of `value` to zero address from account (`from`).
     /// Requirements:
     ///   - `from` account must have at least `value` balance of WETH10 token.
@@ -167,7 +174,7 @@ contract WETH10 {
         }
 
         _balanceOf[from] -= value;
-        (bool success, ) = to.call{value: value}("");
+        (bool success, ) = to.call{value: value}("");              // Withdrawals to this contract are prohibited in `receive()`
         require(success, "!withdraw");
 
         emit Transfer(from, address(0), value);
