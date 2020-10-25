@@ -4,7 +4,7 @@ const TestFlashMinter = artifacts.require('TestFlashMinter')
 const { BN, expectRevert } = require('@openzeppelin/test-helpers')
 require('chai').use(require('chai-as-promised')).should()
 
-const MAX = "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+const MAX = "5192296858534827628530496329220095"
 
 contract('WETH10 - Flash Minting', (accounts) => {
   const [deployer, user1, user2] = accounts
@@ -29,9 +29,9 @@ contract('WETH10 - Flash Minting', (accounts) => {
     flashData.toString().should.equal(user1)
   })
 
-  it('cannot flash mint and overflow', async () => {
+  it('cannot flash mint beyond the total supply limit', async () => {
     await weth.deposit({ from: user1, value: '1' })
-    await expectRevert(weth.flashMint(MAX, '0x00', { from: user1 }), 'overflow')
+    await expectRevert(flash.flashMint(weth.address, MAX, { from: user1 }), 'limit')
   })
 
   it('should not steal a flash mint', async () => {

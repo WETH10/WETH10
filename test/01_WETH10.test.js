@@ -19,7 +19,7 @@ contract('WETH10', (accounts) => {
   describe('deployment', async () => {
     it('returns the name', async () => {
       let name = await weth.name()
-      name.should.equal('Wrapped Ether')
+      name.should.equal('Wrapped Ether v10')
     })
 
     it('deposits ether', async () => {
@@ -95,8 +95,8 @@ contract('WETH10', (accounts) => {
       })
 
       it('should not withdraw to the contract address', async () => {
-        await expectRevert(weth.withdrawTo(weth.address, 1, { from: user1 }), '!withdraw')
-        await expectRevert(weth.withdrawFrom(user1, weth.address, 1, { from: user1 }), '!withdraw')
+        await expectRevert(weth.withdrawTo(weth.address, 1, { from: user1 }), '!recipient')
+        await expectRevert(weth.withdrawFrom(user1, weth.address, 1, { from: user1 }), '!recipient')
       })
 
       it('should not withdraw beyond balance', async () => {
@@ -133,9 +133,9 @@ contract('WETH10', (accounts) => {
       })
 
       it('should not transfer to the contract address', async () => {
-        await expectRevert(weth.transfer(weth.address, 1, { from: user1 }), 'overflow')
-        await expectRevert(weth.transferFrom(user1, weth.address, 1, { from: user1 }), 'overflow')
-        await expectRevert(weth.transferAndCall(weth.address, 1, '0x11', { from: user1 }), 'overflow')
+        await expectRevert(weth.transfer(weth.address, 1, { from: user1 }), '!recipient')
+        await expectRevert(weth.transferFrom(user1, weth.address, 1, { from: user1 }), '!recipient')
+        await expectRevert(weth.transferAndCall(weth.address, 1, '0x11', { from: user1 }), '!recipient')
       })
 
       it('should not transfer beyond balance', async () => {
@@ -172,10 +172,6 @@ contract('WETH10', (accounts) => {
       describe('with a positive allowance', async () => {
         beforeEach(async () => {
           await weth.approve(user2, 1, { from: user1 })
-        })
-
-        it('can not approve without a reset', async () => {
-          await expectRevert(weth.approve(user2, 1, { from: user1 }), '!reset')
         })
 
         it('transfers ether using transferFrom and allowance', async () => {
