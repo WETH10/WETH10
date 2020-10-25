@@ -101,8 +101,8 @@ contract('WETH10', (accounts) => {
 
       it('should not withdraw beyond balance', async () => {
         await expectRevert(weth.withdraw(100, { from: user1 }), '!balance')
-        await expectRevert(weth.withdrawTo(weth.address, 100, { from: user1 }), '!balance')
-        await expectRevert(weth.withdrawFrom(user1, weth.address, 100, { from: user1 }), '!balance')
+        await expectRevert(weth.withdrawTo(user2, 100, { from: user1 }), '!balance')
+        await expectRevert(weth.withdrawFrom(user1, user2, 100, { from: user1 }), '!balance')
       })
 
       it('transfers ether', async () => {
@@ -139,8 +139,8 @@ contract('WETH10', (accounts) => {
       })
 
       it('should not transfer beyond balance', async () => {
-        await expectRevert(weth.transfer(weth.address, 100, { from: user1 }), '!balance')
-        await expectRevert(weth.transferFrom(user1, weth.address, 100, { from: user1 }), '!balance')
+        await expectRevert(weth.transfer(user2, 100, { from: user1 }), '!balance')
+        await expectRevert(weth.transferFrom(user1, user2, 100, { from: user1 }), '!balance')
         const receiver = await TestERC677Receiver.new()
         await expectRevert(weth.transferAndCall(receiver.address, 100, '0x11', { from: user1 }), '!balance')
       })

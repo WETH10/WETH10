@@ -2,7 +2,7 @@
 pragma solidity 0.7.0;
 
 interface FlashMintableLike {
-    function flashMint(uint112, bytes calldata) external;
+    function flashMint(uint256, bytes calldata) external;
     function balanceOf(address) external returns (uint256);
     function deposit() external payable;
     function withdraw(uint256) external;
@@ -18,7 +18,7 @@ contract TestFlashMinter {
 
     receive() external payable {}
 
-    function executeOnFlashMint(uint112 value, bytes calldata data) external {
+    function executeOnFlashMint(uint256 value, bytes calldata data) external {
         flashValue = value;
         (Action action, address target) = abi.decode(data, (Action, address)); // Use this to unpack arbitrary data
         flashData = target;  // Here msg.sender is the weth contract, and target is the user
@@ -37,31 +37,31 @@ contract TestFlashMinter {
         }
     }
 
-    function flashMint(address target, uint112 value) public {
+    function flashMint(address target, uint256 value) public {
         // Use this to pack arbitrary data to `executeOnFlashMint`
         bytes memory data = abi.encode(Action.NORMAL, msg.sender); // Here msg.sender is the user, and target is the weth contract
         FlashMintableLike(target).flashMint(value, data);
     }
 
-    function flashMintAndWithdraw(address target, uint112 value) public {
+    function flashMintAndWithdraw(address target, uint256 value) public {
         // Use this to pack arbitrary data to `executeOnFlashMint`
         bytes memory data = abi.encode(Action.WITHDRAW, msg.sender); // Here msg.sender is the user, and target is the weth contract
         FlashMintableLike(target).flashMint(value, data);
     }
 
-    function flashMintAndSteal(address target, uint112 value) public {
+    function flashMintAndSteal(address target, uint256 value) public {
         // Use this to pack arbitrary data to `executeOnFlashMint`
         bytes memory data = abi.encode(Action.STEAL, msg.sender); // Here msg.sender is the user, and target is the weth contract
         FlashMintableLike(target).flashMint(value, data);
     }
 
-    function flashMintAndReenter(address target, uint112 value) public {
+    function flashMintAndReenter(address target, uint256 value) public {
         // Use this to pack arbitrary data to `executeOnFlashMint`
         bytes memory data = abi.encode(Action.REENTER, msg.sender); // Here msg.sender is the user, and target is the weth contract
         FlashMintableLike(target).flashMint(value, data);
     }
 
-    function flashMintAndOverspend(address target, uint112 value) public {
+    function flashMintAndOverspend(address target, uint256 value) public {
         bytes memory data = abi.encode(Action.OVERSPEND, msg.sender); // Here msg.sender is the user, and target is the weth contract
         FlashMintableLike(target).flashMint(value, data);
     }

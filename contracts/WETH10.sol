@@ -9,7 +9,7 @@ interface ERC677Receiver {
 }
 
 interface FlashMinterLike {
-    function executeOnFlashMint(uint112, bytes calldata) external;
+    function executeOnFlashMint(uint256, bytes calldata) external;
 }
 
 /// @dev WETH10 is an Ether ERC20 wrapper. You can `deposit` Ether and obtain Wrapped Ether which can then be operated as an ERC20 token. You can
@@ -20,7 +20,8 @@ contract WETH10 {
     string public constant symbol = "WETH10";
     uint8  public constant decimals = 18;
     bytes32 public immutable DOMAIN_SEPARATOR;
-    bytes32 public immutable PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+    // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+    bytes32 public immutable PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
 
     /// @dev Emitted when allowance of `spender` for `owner` account WETH10 token changes. `value` is new allowance.
     event  Approval(address indexed owner, address indexed spender, uint256 value);
@@ -38,8 +39,8 @@ contract WETH10 {
     /// @dev Records number of WETH10 token that account (second) will be allowed to spend on behalf of another account (first) through {transferFrom}.
     mapping (address => mapping (address => uint256)) public allowance;
 
-    /// @dev Current amount of flash minted WETH.
-    uint112 public flashMinted;
+    /// @dev Current amount of WETH.
+    uint256 public totalSupply;
 
     constructor() {
         uint256 chainId;
@@ -53,18 +54,12 @@ contract WETH10 {
                 address(this)));
     }
 
-    /// @dev Returns amount of WETH10 token in existence based on deposited ether.
-    /// This contract is restricted to a maximum total supply of `type(uint112).max`
-    /// Note: This can be permanently tricked by self-destructing a contract that sends Ether to this contract.
-    function totalSupply() external view returns (uint256) {
-        return address(this).balance + flashMinted;
-    }
-
     /// @dev Fallback, `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
     receive() external payable {
-        require(address(this).balance + flashMinted <= type(uint112).max, "limit");
         balanceOf[msg.sender] += msg.value;
+        totalSupply += msg.value;
+        require(totalSupply <= type(uint112).max, "limit");
         emit Transfer(address(0), msg.sender, msg.value);
     }
 
@@ -72,7 +67,8 @@ contract WETH10 {
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
     function deposit() external payable {
         balanceOf[msg.sender] += msg.value;
-        require(address(this).balance + flashMinted <= type(uint112).max, "limit");
+        totalSupply += msg.value;
+        require(totalSupply <= type(uint112).max, "limit");
         emit Transfer(address(0), msg.sender, msg.value);
     }
 
@@ -80,8 +76,9 @@ contract WETH10 {
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to `to` account.
     function depositTo(address to) external payable {
         require(to != address(this), "!recipient");
-        require(address(this).balance + flashMinted <= type(uint112).max, "limit");
         balanceOf[to] += msg.value;
+        totalSupply += msg.value;
+        require(totalSupply <= type(uint112).max, "limit");
         emit Transfer(address(0), to, msg.value);
     }
 
@@ -95,8 +92,9 @@ contract WETH10 {
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function depositToAndCall(address to, bytes calldata data) external payable returns (bool success) {
         require(to != address(this), "!recipient");
-        require(address(this).balance + flashMinted <= type(uint112).max, "limit");
         balanceOf[to] += msg.value;
+        totalSupply += msg.value;
+        require(totalSupply <= type(uint112).max, "limit");
         emit Transfer(address(0), to, msg.value);
 
         ERC677Receiver(to).onTokenTransfer(msg.sender, msg.value, data);
@@ -107,17 +105,17 @@ contract WETH10 {
     /// The flash minted WETH10 is not backed by real Ether, but can be withdrawn as such up to the Ether balance of this contract.
     /// Arbitrary data can be passed as a bytes calldata parameter.
     /// Emits two {Transfer} events for minting and burning of the flash minted amount.
-    function flashMint(uint112 value, bytes calldata data) external {
-        flashMinted += value;
-        require(address(this).balance + flashMinted <= type(uint112).max, "limit");
+    function flashMint(uint256 value, bytes calldata data) external {
         balanceOf[msg.sender] += value;
+        totalSupply += value;
+        require(totalSupply <= type(uint112).max, "limit");
         emit Transfer(address(0), msg.sender, value);
 
         FlashMinterLike(msg.sender).executeOnFlashMint(value, data);
 
         require(balanceOf[msg.sender] >= value, "!balance");
         balanceOf[msg.sender] -= value;
-        flashMinted -= value;
+        totalSupply -= value;
         emit Transfer(msg.sender, address(0), value);
     }
 
@@ -127,8 +125,8 @@ contract WETH10 {
     ///   - caller account must have at least `value` balance of WETH10 token.
     function withdraw(uint256 value) external {
         require(balanceOf[msg.sender] >= value, "!balance");
-        
         balanceOf[msg.sender] -= value;
+        totalSupply -= value;
 
         (bool success, ) = msg.sender.call{value: value}("");
         require(success, "!withdraw");
@@ -141,10 +139,10 @@ contract WETH10 {
     /// Requirements:
     ///   - caller account must have at least `value` balance of WETH10 token.
     function withdrawTo(address to, uint256 value) external {
-        require(balanceOf[msg.sender] >= value, "!balance");
         require(to != address(this), "!recipient");
-        
+        require(balanceOf[msg.sender] >= value, "!balance");
         balanceOf[msg.sender] -= value;
+        totalSupply -= value;
 
         (bool success, ) = to.call{value: value}("");
         require(success, "!withdraw");
@@ -160,8 +158,8 @@ contract WETH10 {
     ///   - `from` account must have at least `value` balance of WETH10 token.
     ///   - `from` account must have approved caller to spend at least `value` of WETH10 token, unless `from` and caller are the same account.
     function withdrawFrom(address from, address to, uint256 value) external {
-        require(balanceOf[from] >= value, "!balance");
         require(to != address(this), "!recipient");
+        require(balanceOf[from] >= value, "!balance");
         
         if (from != msg.sender) {
             uint256 allow = allowance[from][msg.sender];
@@ -171,8 +169,9 @@ contract WETH10 {
                 emit Approval(from, msg.sender, allow - value);
             }
         }
-
         balanceOf[from] -= value;
+        totalSupply -= value;
+
         (bool success, ) = to.call{value: value}("");
         require(success, "!withdraw");
 
@@ -228,8 +227,8 @@ contract WETH10 {
     /// Requirements:
     ///   - caller account must have at least `value` WETH10 token.
     function transfer(address to, uint256 value) external returns (bool) {
-        require(balanceOf[msg.sender] >= value, "!balance");
         require(to != address(this), "!recipient");
+        require(balanceOf[msg.sender] >= value, "!balance");
 
         balanceOf[msg.sender] -= value;
         balanceOf[to] += value;
@@ -248,8 +247,8 @@ contract WETH10 {
     /// - owner account (`from`) must have at least `value` WETH10 token.
     /// - caller account must have at least `value` allowance from account (`from`).
     function transferFrom(address from, address to, uint256 value) external returns (bool) {
-        require(balanceOf[from] >= value, "!balance");
         require(to != address(this), "!recipient");
+        require(balanceOf[from] >= value, "!balance");
 
         if (from != msg.sender) {
             uint256 allow = allowance[from][msg.sender];
@@ -275,8 +274,8 @@ contract WETH10 {
     ///   - caller account must have at least `value` WETH10 token.
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function transferAndCall(address to, uint value, bytes calldata data) external returns (bool success) {
-        require(balanceOf[msg.sender] >= value, "!balance");
         require(to != address(this), "!recipient");
+        require(balanceOf[msg.sender] >= value, "!balance");
 
         balanceOf[msg.sender] -= value;
         balanceOf[to] += value;
