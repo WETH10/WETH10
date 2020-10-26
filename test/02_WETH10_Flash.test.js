@@ -25,8 +25,8 @@ contract('WETH10 - Flash Minting', (accounts) => {
     flashBalance.toString().should.equal(new BN('1').toString())
     const flashValue = await flash.flashValue()
     flashValue.toString().should.equal(new BN('1').toString())
-    const flashData = await flash.flashData()
-    flashData.toString().should.equal(user1)
+    const flashUser = await flash.flashUser()
+    flashUser.toString().should.equal(user1)
   })
 
   it('cannot flash mint beyond the total supply limit', async () => {

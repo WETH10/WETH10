@@ -9,7 +9,7 @@ interface ERC677Receiver {
 }
 
 interface FlashMinterLike {
-    function executeOnFlashMint(uint256, bytes calldata) external;
+    function executeOnFlashMint(bytes calldata) external;
 }
 
 /// @dev WETH10 is an Ether ERC20 wrapper. You can `deposit` Ether and obtain Wrapped Ether which can then be operated as an ERC20 token. You can
@@ -99,7 +99,7 @@ contract WETH10 {
         require(totalSupply <= type(uint112).max, "WETH: supply limit exceeded");
         emit Transfer(address(0), msg.sender, value);
 
-        FlashMinterLike(msg.sender).executeOnFlashMint(value, data);
+        FlashMinterLike(msg.sender).executeOnFlashMint(data);
 
         require(balanceOf[msg.sender] >= value, "WETH: transfer amount exceeds balance");
         balanceOf[msg.sender] -= value;
