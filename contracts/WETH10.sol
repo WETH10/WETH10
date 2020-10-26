@@ -162,11 +162,11 @@ contract WETH10 {
         require(balanceOf[from] >= value, "WETH: withdraw amount exceeds balance");
         
         if (from != msg.sender) {
-            uint256 allow = allowance[from][msg.sender];
-            if (allow != type(uint256).max) {
-                require(allow >= value, "WETH: transfer amount exceeds allowance");
+            uint256 allowed = allowance[from][msg.sender];
+            if (allowed != type(uint256).max) {
+                require(allowed >= value, "WETH: transfer amount exceeds allowance");
                 allowance[from][msg.sender] -= value;
-                emit Approval(from, msg.sender, allow - value);
+                emit Approval(from, msg.sender, allowed - value);
             }
         }
         balanceOf[from] -= value;
@@ -251,11 +251,11 @@ contract WETH10 {
         require(balanceOf[from] >= value, "WETH: transfer amount exceeds balance");
 
         if (from != msg.sender) {
-            uint256 allow = allowance[from][msg.sender];
-            if (allow != type(uint256).max) {
-                require(allow >= value, "WETH: transfer amount exceeds allowance");
+            uint256 allowed = allowance[from][msg.sender];
+            if (allowed != type(uint256).max) {
+                require(allowed >= value, "WETH: transfer amount exceeds allowance");
                 allowance[from][msg.sender] -= value;
-                emit Approval(from, msg.sender, allow - value);
+                emit Approval(from, msg.sender, allowed - value);
             }
         }
 
