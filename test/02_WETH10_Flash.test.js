@@ -31,20 +31,20 @@ contract('WETH10 - Flash Minting', (accounts) => {
 
   it('cannot flash mint beyond the total supply limit', async () => {
     await weth.deposit({ from: user1, value: '1' })
-    await expectRevert(flash.flashMint(weth.address, MAX, { from: user1 }), 'WETH: supply limit exceeded')
+    await expectRevert(flash.flashMint(weth.address, MAX, { from: user1 }), 'WETH::flashMint: supply limit exceeded')
   })
 
   it('should not steal a flash mint', async () => {
     await expectRevert(
       flash.flashMintAndSteal(weth.address, 1, { from: deployer }),
-      'WETH: transfer amount exceeds balance'
+      'WETH::flashMint: transfer amount exceeds balance'
     )
   })
 
   it('needs to return funds after a flash mint', async () => {
     await expectRevert(
       flash.flashMintAndOverspend(weth.address, 1, { from: user1 }),
-      'WETH: transfer amount exceeds balance'
+      'WETH::flashMint: transfer amount exceeds balance'
     )
   })
 
