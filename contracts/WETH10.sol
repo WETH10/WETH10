@@ -19,7 +19,7 @@ contract WETH10 {
     string public constant name = "Wrapped Ether v10";
     string public constant symbol = "WETH10";
     uint8  public constant decimals = 18;
-    bytes32 public immutable DOMAIN_SEPARATOR;
+
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     bytes32 public immutable PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
 
@@ -41,18 +41,6 @@ contract WETH10 {
 
     /// @dev Current amount of WETH.
     uint256 public totalSupply;
-
-    constructor() {
-        uint256 chainId;
-        assembly {chainId := chainid()}
-        DOMAIN_SEPARATOR = keccak256(
-            abi.encode(
-                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-                keccak256(bytes(name)),
-                keccak256(bytes("1")),
-                chainId,
-                address(this)));
-    }
 
     /// @dev Fallback, `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
@@ -198,6 +186,16 @@ contract WETH10 {
     /// WETH10 token implementation adapted from https://github.com/albertocuestacanada/ERC20Permit/blob/master/contracts/ERC20Permit.sol.
     function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
         require(block.timestamp <= deadline, "WETH: Expired permit");
+
+        uint256 chainId;
+        assembly {chainId := chainid()}
+        bytes32 DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(bytes(name)),
+                keccak256(bytes("1")),
+                chainId,
+                address(this)));
 
         bytes32 hashStruct = keccak256(
             abi.encode(
