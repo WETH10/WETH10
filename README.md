@@ -4,6 +4,9 @@ This [twitter hackathon project 🐦](https://twitter.com/r_ross_campbell/status
 
 [Kovan testnet deployment](https://kovan.etherscan.io/address/0xD25f374A2d7d40566b006eC21D82b9655865F941) of latest meaningful commit ([fd225b0](https://github.com/WETH10/WETH10/commit/fd225b03531c1af261a0ec9be16c6b8c8cb4110a)) 🔨.
 
+## Total Supply
+The supply of WETH10 is capped at `type(uint112).max`.
+
 ## Wrapping Ether
 Any operation that ends with this contract holding Wrapped Ether is prohibited.
 
@@ -17,8 +20,6 @@ The `withdrawFrom` function allows to unwrap Ether from an owner wallet to a rec
 
 ## Approvals
 When an approval is set to `type(uint256).max` it will not decrease through `transferFrom` or `withdrawFrom` calls.
-
-Approvals can only be set to and from zero, to avoid race conditions.
 
 WETH10 implements [EIP2612](https://eips.ethereum.org/EIPS/eip-2612) to set approvals through off-chain signatures
 
