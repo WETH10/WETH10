@@ -153,7 +153,7 @@ contract WETH10 {
             uint256 allowed = allowance[from][msg.sender];
             if (allowed != type(uint256).max) {
                 require(allowed >= value, "WETH::withdrawFrom: withdraw amount exceeds allowance");
-                allowance[from][msg.sender] -= value;
+                allowance[from][msg.sender] = allowed - value;
                 emit Approval(from, msg.sender, allowed - value);
             }
         }
@@ -252,7 +252,7 @@ contract WETH10 {
             uint256 allowed = allowance[from][msg.sender];
             if (allowed != type(uint256).max) {
                 require(allowed >= value, "WETH::transferFrom: transfer amount exceeds allowance");
-                allowance[from][msg.sender] -= value;
+                allowance[from][msg.sender] = allowed - value;
                 emit Approval(from, msg.sender, allowed - value);
             }
         }
