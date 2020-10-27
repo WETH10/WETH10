@@ -41,6 +41,9 @@ contract WETH10 {
     /// @dev Current amount of flash minted WETH.
     uint256 public flashSupply;
 
+    /// @dev Supply targets to restore after each flash mint.
+    uint256[] public supplyTargets;
+
     /// @dev Fallback, `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
     receive() external payable {
@@ -89,6 +92,7 @@ contract WETH10 {
     /// Arbitrary data can be passed as a bytes calldata parameter.
     /// Emits two {Transfer} events for minting and burning of the flash minted amount.
     function flashMint(uint256 value, bytes calldata data) external {
+        supplyTargets.push(address(this).balance + flashSupply);
         flashSupply += value;
         require(address(this).balance + flashSupply <= type(uint112).max, "WETH::flashMint: supply limit exceeded");
         balanceOf[msg.sender] += value;
@@ -96,10 +100,16 @@ contract WETH10 {
 
         FlashMinterLike(msg.sender).executeOnFlashMint(data);
 
-        require(balanceOf[msg.sender] >= value, "WETH::flashMint: transfer amount exceeds balance");
+        require(address(this).balance + flashSupply == supplyTargets[supplyTargets.length - 1], "WETH::flashMint: supply not restored");
+        supplyTargets.pop();
+    }
+
+    function flashBurn(uint256 value) external {
+        require(balanceOf[msg.sender] >= value, "WETH::flashBurn: burn amount exceeds balance");
+        require(flashSupply >= value, "WETH::flashBurn: burn amount exceeds flash supply");
         balanceOf[msg.sender] -= value;
         flashSupply -= value;
-        emit Transfer(msg.sender, address(0), value);
+        emit Transfer(msg.sender, address(0), value);        
     }
 
     /// @dev Burn `value` WETH10 token from caller account and withdraw matching ether to the same.

@@ -37,14 +37,7 @@ contract('WETH10 - Flash Minting', (accounts) => {
   it('should not steal a flash mint', async () => {
     await expectRevert(
       flash.flashMintAndSteal(weth.address, 1, { from: deployer }),
-      'WETH::flashMint: transfer amount exceeds balance'
-    )
-  })
-
-  it('needs to return funds after a flash mint', async () => {
-    await expectRevert(
-      flash.flashMintAndOverspend(weth.address, 1, { from: user1 }),
-      'WETH::flashMint: transfer amount exceeds balance'
+      'WETH::flashMint: supply not restored'
     )
   })
 

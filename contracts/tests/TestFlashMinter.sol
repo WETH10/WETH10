@@ -3,6 +3,7 @@ pragma solidity 0.7.0;
 
 interface FlashMintableLike {
     function flashMint(uint256, bytes calldata) external;
+    function flashBurn(uint256) external;
     function balanceOf(address) external returns (uint256);
     function deposit() external payable;
     function withdraw(uint256) external;
@@ -24,16 +25,17 @@ contract TestFlashMinter {
         flashValue = value;
         if (action == Action.NORMAL) {
             flashBalance = FlashMintableLike(msg.sender).balanceOf(address(this));
+            FlashMintableLike(msg.sender).flashBurn(value);
         } else if (action == Action.WITHDRAW) {
             FlashMintableLike(msg.sender).withdraw(value);
             flashBalance = address(this).balance;
             FlashMintableLike(msg.sender).deposit{ value: value }();
+            FlashMintableLike(msg.sender).flashBurn(value);
         } else if (action == Action.STEAL) {
-            FlashMintableLike(msg.sender).transfer(address(1), value);
+            // Just keep the funds
         } else if (action == Action.REENTER) {
-            flashMint(msg.sender, value * 2);
-        } else if (action == Action.OVERSPEND) {
-            FlashMintableLike(msg.sender).transfer(address(0), 1);
+            flashMint(msg.sender, value * 2); // Do an inner flash mint with value * 2
+            FlashMintableLike(msg.sender).flashBurn(value); // Exit the outer flash mint from `flashMintAndReenter`
         }
     }
 
