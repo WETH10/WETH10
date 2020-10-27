@@ -39,34 +39,31 @@ contract WETH10 {
     /// @dev Records number of WETH10 token that account (second) will be allowed to spend on behalf of another account (first) through {transferFrom}.
     mapping (address => mapping (address => uint256)) public allowance;
 
-    /// @dev Current amount of WETH.
-    uint256 public totalSupply;
+    /// @dev Current amount of flash minted WETH.
+    uint256 public flashSupply;
 
     /// @dev Fallback, `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
     receive() external payable {
+        require(address(this).balance + flashSupply <= type(uint112).max, "WETH::receive: supply limit exceeded");
         balanceOf[msg.sender] += msg.value;
-        totalSupply += msg.value;
-        require(totalSupply <= type(uint112).max, "WETH::receive: supply limit exceeded");
         emit Transfer(address(0), msg.sender, msg.value);
     }
 
     /// @dev `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
     function deposit() external payable {
+        require(address(this).balance + flashSupply <= type(uint112).max, "WETH::deposit: supply limit exceeded");
         balanceOf[msg.sender] += msg.value;
-        totalSupply += msg.value;
-        require(totalSupply <= type(uint112).max, "WETH::deposit: supply limit exceeded");
         emit Transfer(address(0), msg.sender, msg.value);
     }
 
     /// @dev `msg.value` of ether sent to contract grants `to` account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to `to` account.
     function depositTo(address to) external payable {
+        require(address(this).balance + flashSupply <= type(uint112).max, "WETH::depositTo: supply limit exceeded");
         require(to != address(this), "WETH::depositTo: invalid recipient");
         balanceOf[to] += msg.value;
-        totalSupply += msg.value;
-        require(totalSupply <= type(uint112).max, "WETH::depositTo: supply limit exceeded");
         emit Transfer(address(0), to, msg.value);
     }
 
@@ -79,10 +76,9 @@ contract WETH10 {
     ///   - caller account must have at least `value` WETH10 token and transfer to account (`to`) cannot cause overflow.
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function depositToAndCall(address to, bytes calldata data) external payable returns (bool success) {
+        require(address(this).balance + flashSupply <= type(uint112).max, "WETH::depositToAndCall: supply limit exceeded");
         require(to != address(this), "WETH::depositToAndCall: invalid recipient");
         balanceOf[to] += msg.value;
-        totalSupply += msg.value;
-        require(totalSupply <= type(uint112).max, "WETH::depositToAndCall: supply limit exceeded");
         emit Transfer(address(0), to, msg.value);
 
         ERC677Receiver(to).onTokenTransfer(msg.sender, msg.value, data);
@@ -94,16 +90,16 @@ contract WETH10 {
     /// Arbitrary data can be passed as a bytes calldata parameter.
     /// Emits two {Transfer} events for minting and burning of the flash minted amount.
     function flashMint(uint256 value, bytes calldata data) external {
+        flashSupply += value;
+        require(address(this).balance + flashSupply <= type(uint112).max, "WETH::flashMint: supply limit exceeded");
         balanceOf[msg.sender] += value;
-        totalSupply += value;
-        require(totalSupply <= type(uint112).max, "WETH::flashMint: supply limit exceeded");
         emit Transfer(address(0), msg.sender, value);
 
         FlashMinterLike(msg.sender).executeOnFlashMint(data);
 
         require(balanceOf[msg.sender] >= value, "WETH::flashMint: transfer amount exceeds balance");
         balanceOf[msg.sender] -= value;
-        totalSupply -= value;
+        flashSupply -= value;
         emit Transfer(msg.sender, address(0), value);
     }
 
@@ -114,7 +110,6 @@ contract WETH10 {
     function withdraw(uint256 value) external {
         require(balanceOf[msg.sender] >= value, "WETH::withdraw: withdraw amount exceeds balance");
         balanceOf[msg.sender] -= value;
-        totalSupply -= value;
 
         (bool success, ) = msg.sender.call{value: value}("");
         require(success, "WETH::withdraw: Ether transfer failed");
@@ -127,10 +122,9 @@ contract WETH10 {
     /// Requirements:
     ///   - caller account must have at least `value` balance of WETH10 token.
     function withdrawTo(address to, uint256 value) external {
-        require(to != address(this), "WETH::withdrawTo: invalid recipient");
         require(balanceOf[msg.sender] >= value, "WETH::withdrawTo: withdraw amount exceeds balance");
+        require(to != address(this), "WETH::withdrawTo: invalid recipient");
         balanceOf[msg.sender] -= value;
-        totalSupply -= value;
 
         (bool success, ) = to.call{value: value}("");
         require(success, "WETH::withdrawTo: Ether transfer failed");
@@ -146,8 +140,8 @@ contract WETH10 {
     ///   - `from` account must have at least `value` balance of WETH10 token.
     ///   - `from` account must have approved caller to spend at least `value` of WETH10 token, unless `from` and caller are the same account.
     function withdrawFrom(address from, address to, uint256 value) external {
-        require(to != address(this), "WETH::withdrawFrom: invalid recipient");
         require(balanceOf[from] >= value, "WETH::withdrawFrom: withdraw amount exceeds balance");
+        require(to != address(this), "WETH::withdrawFrom: invalid recipient");
         
         if (from != msg.sender) {
             uint256 allowed = allowance[from][msg.sender];
@@ -158,7 +152,6 @@ contract WETH10 {
             }
         }
         balanceOf[from] -= value;
-        totalSupply -= value;
 
         (bool success, ) = to.call{value: value}("");
         require(success, "WETH::withdraw: Ether transfer failed");
@@ -225,8 +218,8 @@ contract WETH10 {
     /// Requirements:
     ///   - caller account must have at least `value` WETH10 token.
     function transfer(address to, uint256 value) external returns (bool) {
-        require(to != address(this), "WETH::transfer: invalid recipient");
         require(balanceOf[msg.sender] >= value, "WETH::transfer: transfer amount exceeds balance");
+        require(to != address(this), "WETH::transfer: invalid recipient");
 
         balanceOf[msg.sender] -= value;
         balanceOf[to] += value;
@@ -245,8 +238,8 @@ contract WETH10 {
     /// - owner account (`from`) must have at least `value` WETH10 token.
     /// - caller account must have at least `value` allowance from account (`from`).
     function transferFrom(address from, address to, uint256 value) external returns (bool) {
-        require(to != address(this), "WETH::transferFrom: invalid recipient");
         require(balanceOf[from] >= value, "WETH::transferFrom: transfer amount exceeds balance");
+        require(to != address(this), "WETH::transferFrom: invalid recipient");
 
         if (from != msg.sender) {
             uint256 allowed = allowance[from][msg.sender];
@@ -272,8 +265,8 @@ contract WETH10 {
     ///   - caller account must have at least `value` WETH10 token.
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function transferAndCall(address to, uint value, bytes calldata data) external returns (bool success) {
-        require(to != address(this), "WETH::transferAndCall: invalid recipient");
         require(balanceOf[msg.sender] >= value, "WETH::transferAndCall: transfer amount exceeds balance");
+        require(to != address(this), "WETH::transferAndCall: invalid recipient");
 
         balanceOf[msg.sender] -= value;
         balanceOf[to] += value;

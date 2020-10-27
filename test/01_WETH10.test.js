@@ -69,11 +69,6 @@ contract('WETH10', (accounts) => {
         await weth.deposit({ from: user1, value: 10 })
       })
 
-      it('reads the supply', async () => {
-        const supply = await weth.totalSupply()
-        supply.toString().should.equal(new BN('10').toString())
-      })
-
       it('withdraws ether', async () => {
         const balanceBefore = await weth.balanceOf(user1)
         await weth.withdraw(1, { from: user1 })
