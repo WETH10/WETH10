@@ -91,14 +91,14 @@ contract WETH10 {
     /// The flash minted WETH10 is not backed by real Ether, but can be withdrawn as such up to the Ether balance of this contract.
     /// Arbitrary data can be passed as a bytes calldata parameter.
     /// Emits two {Transfer} events for minting and burning of the flash minted amount.
-    function flashMint(uint256 value, bytes calldata data) external {
+    function flashMint(address to, uint256 value, bytes calldata data) external {
         supplyTargets.push(address(this).balance + flashSupply);
         flashSupply += value;
         require(address(this).balance + flashSupply <= type(uint112).max, "WETH::flashMint: supply limit exceeded");
-        balanceOf[msg.sender] += value;
-        emit Transfer(address(0), msg.sender, value);
+        balanceOf[to] += value;
+        emit Transfer(address(0), to, value);
 
-        FlashMinterLike(msg.sender).executeOnFlashMint(data);
+        FlashMinterLike(to).executeOnFlashMint(data);
 
         require(address(this).balance + flashSupply == supplyTargets[supplyTargets.length - 1], "WETH::flashMint: supply not restored");
         supplyTargets.pop();
