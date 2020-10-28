@@ -127,3 +127,6 @@ types/
 
 # crytic and echidna
 crytic-export/
+
+# JetBrains
+.idea
