@@ -9,10 +9,23 @@ pragma solidity 0.7.0;
 interface IWETH10 {
 
     /// @dev Emitted when allowance of `spender` for `owner` account WETH10 token changes. `value` is new allowance.
-    event  Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 
     /// @dev Emitted when `value` WETH10 token are moved from account (`from`) to account (`to`). Event also tracks minting and burning of WETH10 tokens.
-    event  Transfer(address indexed from, address indexed to, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /// @dev Returns amount of WETH10 token owned by account.
+    function balanceOf(address owner) external view returns(uint256);
+
+    /// @dev Returns current ERC2612 nonce for account. This value must be included whenever signature is generated for {permit}.
+    /// Every successful call to {permit} must increase account's nonce by one. This prevents signature from being used multiple times.
+    function nonceOf(address) external view returns(uint256);
+
+    /// @dev Returns amount of WETH10 token that account (spender) will be able to spend on behalf of another account (owner) through {transferFrom}.
+    function allowance(address owner, address spender) external view returns(uint256);
+
+    /// @dev Returns current amount of flash minted WETH10 token.
+    function flashSupply() external view returns(uint256);
 
     /// @dev `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
