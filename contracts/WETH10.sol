@@ -38,10 +38,6 @@ contract WETH10 is IWETH10 {
     /// @dev Current amount of flash minted WETH.
     uint256 public flashSupply;
 
-    function flashSupply(address owner) external view returns(uint256) {
-        return 00;
-    }
-
     /// @dev Fallback, `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
     receive() external payable {
