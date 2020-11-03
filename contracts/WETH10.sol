@@ -26,17 +26,17 @@ contract WETH10 is IWETH10 {
     bytes32 public immutable PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
     /// @dev Records amount of WETH10 token owned by account.
-    mapping (address => uint256) public balanceOf;
+    mapping (address => uint256) public override balanceOf;
 
     /// @dev Records current ERC2612 nonce for account. This value must be included whenever signature is generated for {permit}.
     /// Every successful call to {permit} increases account's nonce by one. This prevents signature from being used multiple times.
-    mapping (address => uint256) public nonceOf;
+    mapping (address => uint256) public override nonces;
 
     /// @dev Records number of WETH10 token that account (second) will be allowed to spend on behalf of another account (first) through {transferFrom}.
-    mapping (address => mapping (address => uint256)) public allowance;
+    mapping (address => mapping (address => uint256)) public override allowance;
 
     /// @dev Current amount of flash minted WETH.
-    uint256 public flashSupply;
+    uint256 public override flashSupply;
 
     /// @dev Fallback, `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
@@ -44,6 +44,11 @@ contract WETH10 is IWETH10 {
         require(address(this).balance + flashSupply <= type(uint112).max, "WETH::receive: supply limit exceeded");
         balanceOf[msg.sender] += msg.value;
         emit Transfer(address(0), msg.sender, msg.value);
+    }
+
+    /// @dev Returns the total supply of WETH10 as the Ether held in this contract.
+    function totalSupply() external view override returns(uint256) {
+        return address(this).balance;
     }
 
     /// @dev `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
