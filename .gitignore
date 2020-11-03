@@ -10,7 +10,6 @@ cache/
 
 # lock files
 package-json.lock
-yarn.lock
 
 # misc
 .DS_Store
@@ -127,3 +126,6 @@ types/
 
 # crytic and echidna
 crytic-export/
+
+# JetBrains
+.idea
