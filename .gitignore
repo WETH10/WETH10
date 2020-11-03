@@ -10,7 +10,6 @@ cache/
 
 # lock files
 package-json.lock
-yarn.lock
 
 # misc
 .DS_Store
