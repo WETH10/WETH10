@@ -31,7 +31,7 @@ contract WETH10 is IWETH10 {
     bytes32 public immutable PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
     /// @dev WETH9 contract
-    WETH9Like public weth9;
+    WETH9Like public immutable weth9;
 
     /// @dev Records amount of WETH10 token owned by account.
     mapping (address => uint256) public override balanceOf;
