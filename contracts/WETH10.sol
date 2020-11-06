@@ -14,6 +14,11 @@ interface FlashMinterLike {
     function executeOnFlashMint(bytes calldata) external;
 }
 
+interface WETH9Like {
+    function deposit() external payable;
+    function transfer(address, uint) external returns (bool);
+}
+
 /// @dev WETH10 is an Ether ERC20 wrapper. You can `deposit` Ether and obtain Wrapped Ether which can then be operated as an ERC20 token. You can
 /// `withdraw` Ether from WETH10, which will burn Wrapped Ether in your wallet. The amount of Wrapped Ether in any wallet is always identical to the
 /// balance of Ether deposited minus the Ether withdrawn with that specific wallet.
@@ -24,6 +29,9 @@ contract WETH10 is IWETH10 {
     uint8  public constant decimals = 18;
 
     bytes32 public immutable PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+
+    /// @dev WETH9 contract
+    WETH9Like public immutable weth9;
 
     /// @dev Records amount of WETH10 token owned by account.
     mapping (address => uint256) public override balanceOf;
@@ -37,6 +45,11 @@ contract WETH10 is IWETH10 {
 
     /// @dev Current amount of flash minted WETH.
     uint256 public override flashSupply;
+
+    /// @dev The constructor takes the address of the WETH9 contract to allow conversions
+    constructor (address weth9_) {
+        weth9 = WETH9Like(weth9_);
+    }
 
     /// @dev Fallback, `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
@@ -155,9 +168,65 @@ contract WETH10 is IWETH10 {
         balanceOf[from] -= value;
 
         (bool success, ) = to.call{value: value}("");
-        require(success, "WETH::withdraw: Ether transfer failed");
+        require(success, "WETH::withdrawFrom: Ether transfer failed");
 
         emit Transfer(from, address(0), value);
+    }
+
+    /// @dev Exchange `value` WETH10 token from caller account for WETH9 token.
+    /// Emits {Transfer} event to reflect WETH10 token burn of `value` WETH10 token to zero address from caller account. 
+    /// Requirements:
+    ///   - caller account must have at least `value` balance of WETH10 token.
+    function convert(uint256 value) external override {
+        require(balanceOf[msg.sender] >= value, "WETH::convert: convert amount exceeds balance");
+        balanceOf[msg.sender] -= value;
+
+        emit Transfer(msg.sender, address(0), value);
+
+        weth9.deposit{value: value}();
+        require(weth9.transfer(msg.sender, value), "WETH::convert: WETH transfer failed");
+    }
+
+    /// @dev Exchange `value` WETH10 token from caller account for WETH9 token credited to account (`to`).
+    /// Emits {Transfer} event to reflect WETH10 token burn of `value` WETH10 token to zero address from caller account.
+    /// Requirements:
+    ///   - caller account must have at least `value` balance of WETH10 token.
+    function convertTo(address to, uint256 value) external override {
+        require(balanceOf[msg.sender] >= value, "WETH::convertTo: convert amount exceeds balance");
+        require(to != address(this), "WETH::convertTo: invalid recipient");
+        balanceOf[msg.sender] -= value;
+
+        emit Transfer(msg.sender, address(0), value);
+    
+        weth9.deposit{value: value}();
+        require(weth9.transfer(to, value), "WETH::convert: WETH transfer failed");
+    }
+
+    /// @dev Exchange `value` WETH10 token from account (`from`) for WETH9 token credited to account (`to`).
+    /// Emits {Approval} event to reflect reduced allowance `value` for caller account to spend from account (`from`),
+    /// unless allowance is set to `type(uint256).max`
+    /// Emits {Transfer} event to reflect WETH10 token burn of `value` to zero address from account (`from`).
+    /// Requirements:
+    ///   - `from` account must have at least `value` balance of WETH10 token.
+    ///   - `from` account must have approved caller to spend at least `value` of WETH10 token, unless `from` and caller are the same account.
+    function convertFrom(address from, address to, uint256 value) external override {
+        require(balanceOf[from] >= value, "WETH::convertFrom: convert amount exceeds balance");
+        require(to != address(this), "WETH::convertFrom: invalid recipient");
+        
+        if (from != msg.sender) {
+            uint256 allowed = allowance[from][msg.sender];
+            if (allowed != type(uint256).max) {
+                require(allowed >= value, "WETH::convertFrom: convert amount exceeds allowance");
+                allowance[from][msg.sender] = allowed - value;
+                emit Approval(from, msg.sender, allowed - value);
+            }
+        }
+        balanceOf[from] -= value;
+
+        emit Transfer(from, address(0), value);
+
+        weth9.deposit{value: value}();
+        require(weth9.transfer(to, value), "WETH::convert: WETH transfer failed");
     }
 
     /// @dev Sets `value` as allowance of `spender` account over caller account's WETH10 token.

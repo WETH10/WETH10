@@ -58,6 +58,29 @@ interface IWETH10 is IERC20, IERC2612 {
     ///   - `from` account must have approved caller to spend at least `value` of WETH10 token, unless `from` and caller are the same account.
     function withdrawFrom(address from, address to, uint256 value) external;
 
+
+    /// @dev Exchange `value` WETH10 token from caller account for WETH9 token.
+    /// Emits {Transfer} event to reflect WETH10 token burn of `value` WETH10 token to zero address from caller account. 
+    /// Requirements:
+    ///   - caller account must have at least `value` balance of WETH10 token.
+    function convert(uint256 value) external;
+
+    /// @dev Exchange `value` WETH10 token from caller account for WETH9 token credited to account (`to`).
+    /// Emits {Transfer} event to reflect WETH10 token burn of `value` WETH10 token to zero address from caller account.
+    /// Requirements:
+    ///   - caller account must have at least `value` balance of WETH10 token.
+    function convertTo(address to, uint256 value) external;
+
+    /// @dev Exchange `value` WETH10 token from account (`from`) for WETH9 token credited to account (`to`).
+    /// Emits {Approval} event to reflect reduced allowance `value` for caller account to spend from account (`from`),
+    /// unless allowance is set to `type(uint256).max`
+    /// Emits {Transfer} event to reflect WETH10 token burn of `value` to zero address from account (`from`).
+    /// Requirements:
+    ///   - `from` account must have at least `value` balance of WETH10 token.
+    ///   - `from` account must have approved caller to spend at least `value` of WETH10 token, unless `from` and caller are the same account.
+    function convertFrom(address from, address to, uint256 value) external;
+
+
     /// @dev Moves `value` WETH10 token from caller's account to account (`to`), after which a call is executed to an ERC677-compliant contract.
     /// Returns boolean value indicating whether operation succeeded.
     /// Emits {Transfer} event.
