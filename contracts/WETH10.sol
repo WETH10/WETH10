@@ -61,7 +61,7 @@ contract WETH10 is IWETH10 {
 
     /// @dev Returns the total supply of WETH10 as the Ether held in this contract.
     function totalSupply() external view override returns(uint256) {
-        return address(this).balance;
+        return address(this).balance + flashSupply;
     }
 
     /// @dev `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
