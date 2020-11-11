@@ -28,7 +28,7 @@
   },
   "settings": {
     "metadata": {
-      "useLiteralContent": false
+      "useLiteralContent": true
     },
     "optimizer": {
       "enabled": true,
@@ -40,7 +40,12 @@
           "abi",
           "evm.bytecode",
           "evm.deployedBytecode",
-          "evm.methodIdentifiers"
+          "evm.methodIdentifiers",
+          "metadata",
+          "devdoc",
+          "userdoc",
+          "storageLayout",
+          "evm.gasEstimates"
         ],
         "": [
           "id",
