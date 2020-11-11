@@ -1699,10 +1699,10 @@ bufferutil@^4.0.1:
   dependencies:
     node-gyp-build "~3.7.0"
 
-buidler-deploy@^0.6.0-beta.36:
-  version "0.6.0-beta.36"
-  resolved "https://registry.yarnpkg.com/buidler-deploy/-/buidler-deploy-0.6.0-beta.36.tgz#e919fcdcc19722014c3222942a1f76be313fe166"
-  integrity sha512-jIJdxfBSwaQiRZpf07+U4Vm0zKTMHn4GAX37XbLrsH4URiTH5/qsQw96mAyoetkY4u8aXMjyDKHXxcDjE9x//Q==
+buidler-deploy@^0.6.0-beta.37:
+  version "0.6.0-beta.37"
+  resolved "https://registry.yarnpkg.com/buidler-deploy/-/buidler-deploy-0.6.0-beta.37.tgz#938346d3a3815fb21a2d796825731c6377fcbf2b"
+  integrity sha512-IyHFs3YBzE27ECJ4+dWTilQmGFFMM1oJMsRt9AlfECbTEyfL+e+e93ofPajNhH2jnsYRw6QgYKgeVWGZbqQpjA==
   dependencies:
     "@ethersproject/abi" "^5.0.2"
     "@ethersproject/abstract-signer" "^5.0.2"
