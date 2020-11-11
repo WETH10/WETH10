@@ -16,7 +16,7 @@ contract('WETH10', (accounts) => {
 
   beforeEach(async () => {
     weth9 = await WETH9.new({ from: deployer })
-    weth10 = await WETH10.new(weth9.address, { from: deployer })
+    weth10 = await WETH10.new({ from: deployer })
   })
 
   describe('deployment', async () => {
@@ -70,6 +70,7 @@ contract('WETH10', (accounts) => {
     describe('with a positive balance', async () => {
       beforeEach(async () => {
         await weth10.deposit({ from: user1, value: 10 })
+        await weth9.deposit({ from: user2, value: 10 })
       })
 
       it('returns the Ether balance as total supply', async () => {
@@ -108,21 +109,32 @@ contract('WETH10', (accounts) => {
         await expectRevert(weth10.withdrawFrom(user1, user2, 100, { from: user1 }), 'WETH::withdrawFrom: withdraw amount exceeds balance')
       })
 
-      it('converts weth10 to weth9', async () => {
+      it.only('converts weth10 to weth9', async () => {
         const weth9Before = await weth9.balanceOf(user1)
         const weth10Before = await weth10.balanceOf(user1)
-        await weth10.convert(1, { from: user1 })
+        await weth10.weth10ToWeth9(weth9.address, user1, user1, 1, { from: user1 })
         const weth9After = await weth9.balanceOf(user1)
         const weth10After = await weth10.balanceOf(user1)
         weth9After.toString().should.equal(weth9Before.add(new BN('1')).toString())
         weth10After.toString().should.equal(weth10Before.sub(new BN('1')).toString())
       })
 
+      it.only('converts weth9 to weth10', async () => {
+        const weth9Before = await weth9.balanceOf(user2)
+        const weth10Before = await weth10.balanceOf(user2)
+        await weth9.approve(weth10.address, 1, { from: user2 })
+        await weth10.weth9ToWeth10(weth9.address, user2, user2, 1, { from: user2 })
+        const weth9After = await weth9.balanceOf(user2)
+        const weth10After = await weth10.balanceOf(user2)
+        weth9After.toString().should.equal(weth9Before.sub(new BN('1')).toString())
+        weth10After.toString().should.equal(weth10Before.add(new BN('1')).toString())
+      })
+
       it('converts weth10 to weth9 into another account', async () => {
         const fromBalanceBefore = await weth10.balanceOf(user1)
         const toBalanceBefore = await weth9.balanceOf(user2)
 
-        await weth10.convertTo(user2, 1, { from: user1 })
+        await weth10.weth10ToWeth9(weth9.address, user1, user2, 1, { from: user1 })
 
         const fromBalanceAfter = await weth10.balanceOf(user1)
         const toBalanceAfter = await weth9.balanceOf(user2)
@@ -132,14 +144,11 @@ contract('WETH10', (accounts) => {
       })
 
       it('should not convert weth10 to weth9 into the contract address', async () => {
-        await expectRevert(weth10.convertTo(weth10.address, 1, { from: user1 }), 'WETH::convertTo: invalid recipient')
-        await expectRevert(weth10.convertFrom(user1, weth10.address, 1, { from: user1 }), 'WETH::convertFrom: invalid recipient')
+        await expectRevert(weth10.weth10ToWeth9(weth9.address, user1, weth10.address, 1, { from: user1 }), 'WETH::weth10ToWeth9: invalid recipient')
       })
 
-      it('should not withdraw beyond balance', async () => {
-        await expectRevert(weth10.convert(100, { from: user1 }), 'WETH::convert: convert amount exceeds balance')
-        await expectRevert(weth10.convertTo(user2, 100, { from: user1 }), 'WETH::convertTo: convert amount exceeds balance')
-        await expectRevert(weth10.convertFrom(user1, user2, 100, { from: user1 }), 'WETH::convertFrom: convert amount exceeds balance')
+      it('should not convert beyond balance', async () => {
+        await expectRevert(weth10.weth10ToWeth9(weth9.address, user1, user2, 100, { from: user1 }), 'WETH::weth10ToWeth9: convert amount exceeds balance')
       })
 
       it('transfers ether', async () => {
@@ -241,11 +250,11 @@ contract('WETH10', (accounts) => {
           toBalanceAfter.toString().should.equal(toBalanceBefore.add(new BN('1')).toString())
         })
   
-        it('converts weth10 to weth9 using convertFrom and allowance', async () => {
+        it('converts weth10 to weth9 using allowance', async () => {
           const fromBalanceBefore = await weth10.balanceOf(user1)
           const toBalanceBefore = await weth9.balanceOf(user3)
 
-          await weth10.convertFrom(user1, user3, 1, { from: user2 })
+          await weth10.weth10ToWeth9(weth9.address, user1, user3, 1, { from: user2 })
 
           const fromBalanceAfter = await weth10.balanceOf(user1)
           const toBalanceAfter = await weth9.balanceOf(user3)
@@ -276,8 +285,8 @@ contract('WETH10', (accounts) => {
           allowanceAfter.toString().should.equal(MAX)
         })
 
-        it('does not decrease allowance using convertFrom', async () => {
-          await weth10.convertFrom(user1, user2, 1, { from: user2 })
+        it('does not decrease allowance using weth10ToWeth9', async () => {
+          await weth10.weth10ToWeth9(weth9.address, user1, user2, 1, { from: user2 })
           const allowanceAfter = await weth10.allowance(user1, user2)
           allowanceAfter.toString().should.equal(MAX)
         })
