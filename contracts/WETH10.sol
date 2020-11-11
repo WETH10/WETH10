@@ -61,7 +61,7 @@ contract WETH10 is IWETH10 {
 
     /// @dev Returns the total supply of WETH10 as the Ether held in this contract.
     function totalSupply() external view override returns(uint256) {
-        return address(this).balance;
+        return address(this).balance + flashSupply;
     }
 
     /// @dev `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
@@ -103,7 +103,7 @@ contract WETH10 is IWETH10 {
     /// The flash minted WETH10 is not backed by real Ether, but can be withdrawn as such up to the Ether balance of this contract.
     /// Arbitrary data can be passed as a bytes calldata parameter.
     /// Emits two {Transfer} events for minting and burning of the flash minted amount.
-    function flashMint(uint256 value, bytes calldata data) external override {
+    function flashMint(uint112 value, bytes calldata data) external override {
         flashSupply += value;
         require(address(this).balance + flashSupply <= type(uint112).max, "WETH::flashMint: supply limit exceeded");
         balanceOf[msg.sender] += value;
