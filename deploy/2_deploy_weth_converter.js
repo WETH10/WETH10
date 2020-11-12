@@ -1,9 +1,9 @@
 module.exports = async function ({deployments, getNamedAccounts}) {
   const {deploy} = deployments;
   const {deployer} = await getNamedAccounts();
-  await deploy("WETH10", {
-    from: deployer, deterministicDeployment: true,
-    args: ["0x0000000000000000000000000000000000000000"],
+  await deploy("WethConverter", {
+    from: deployer,
+    deterministicDeployment: true,
     log: true
   });
 }
