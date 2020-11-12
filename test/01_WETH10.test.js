@@ -108,40 +108,6 @@ contract('WETH10', (accounts) => {
         await expectRevert(weth10.withdrawFrom(user1, user2, 100, { from: user1 }), 'WETH::withdrawFrom: withdraw amount exceeds balance')
       })
 
-      it('converts weth10 to weth9', async () => {
-        const weth9Before = await weth9.balanceOf(user1)
-        const weth10Before = await weth10.balanceOf(user1)
-        await weth10.convert(1, { from: user1 })
-        const weth9After = await weth9.balanceOf(user1)
-        const weth10After = await weth10.balanceOf(user1)
-        weth9After.toString().should.equal(weth9Before.add(new BN('1')).toString())
-        weth10After.toString().should.equal(weth10Before.sub(new BN('1')).toString())
-      })
-
-      it('converts weth10 to weth9 into another account', async () => {
-        const fromBalanceBefore = await weth10.balanceOf(user1)
-        const toBalanceBefore = await weth9.balanceOf(user2)
-
-        await weth10.convertTo(user2, 1, { from: user1 })
-
-        const fromBalanceAfter = await weth10.balanceOf(user1)
-        const toBalanceAfter = await weth9.balanceOf(user2)
-
-        fromBalanceAfter.toString().should.equal(fromBalanceBefore.sub(new BN('1')).toString())
-        toBalanceAfter.toString().should.equal(toBalanceBefore.add(new BN('1')).toString())
-      })
-
-      it('should not convert weth10 to weth9 into the contract address', async () => {
-        await expectRevert(weth10.convertTo(weth10.address, 1, { from: user1 }), 'WETH::convertTo: invalid recipient')
-        await expectRevert(weth10.convertFrom(user1, weth10.address, 1, { from: user1 }), 'WETH::convertFrom: invalid recipient')
-      })
-
-      it('should not withdraw beyond balance', async () => {
-        await expectRevert(weth10.convert(100, { from: user1 }), 'WETH::convert: convert amount exceeds balance')
-        await expectRevert(weth10.convertTo(user2, 100, { from: user1 }), 'WETH::convertTo: convert amount exceeds balance')
-        await expectRevert(weth10.convertFrom(user1, user2, 100, { from: user1 }), 'WETH::convertFrom: convert amount exceeds balance')
-      })
-
       it('transfers ether', async () => {
         const balanceBefore = await weth10.balanceOf(user2)
         await weth10.transfer(user2, 1, { from: user1 })
@@ -240,19 +206,6 @@ contract('WETH10', (accounts) => {
           fromBalanceAfter.toString().should.equal(fromBalanceBefore.sub(new BN('1')).toString())
           toBalanceAfter.toString().should.equal(toBalanceBefore.add(new BN('1')).toString())
         })
-  
-        it('converts weth10 to weth9 using convertFrom and allowance', async () => {
-          const fromBalanceBefore = await weth10.balanceOf(user1)
-          const toBalanceBefore = await weth9.balanceOf(user3)
-
-          await weth10.convertFrom(user1, user3, 1, { from: user2 })
-
-          const fromBalanceAfter = await weth10.balanceOf(user1)
-          const toBalanceAfter = await weth9.balanceOf(user3)
-
-          fromBalanceAfter.toString().should.equal(fromBalanceBefore.sub(new BN('1')).toString())
-          toBalanceAfter.toString().should.equal(toBalanceBefore.add(new BN('1')).toString())
-        })
 
         it('should not withdraw beyond allowance', async () => {
           await expectRevert(weth10.withdrawFrom(user1, user3, 2, { from: user2 }), 'WETH::withdrawFrom: withdraw amount exceeds allowance')
@@ -272,12 +225,6 @@ contract('WETH10', (accounts) => {
 
         it('does not decrease allowance using withdrawFrom', async () => {
           await weth10.withdrawFrom(user1, user2, 1, { from: user2 })
-          const allowanceAfter = await weth10.allowance(user1, user2)
-          allowanceAfter.toString().should.equal(MAX)
-        })
-
-        it('does not decrease allowance using convertFrom', async () => {
-          await weth10.convertFrom(user1, user2, 1, { from: user2 })
           const allowanceAfter = await weth10.allowance(user1, user2)
           allowanceAfter.toString().should.equal(MAX)
         })
