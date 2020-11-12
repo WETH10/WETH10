@@ -18,7 +18,7 @@ contract WETH10Fuzzing {
 
     /// @dev Instantiate the WETH10 contract, and a holder address that will return weth when asked to.
     constructor () {
-        weth = new WETH10(address(0));
+        weth = new WETH10();
         holder = address(new MockHolder(address(weth), address(this)));
     }
 
