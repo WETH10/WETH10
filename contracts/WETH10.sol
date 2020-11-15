@@ -248,7 +248,8 @@ contract WETH10 is IWETH10 {
     /// - owner account (`from`) must have at least `value` WETH10 token.
     /// - caller account must have at least `value` allowance from account (`from`).
     function transferFrom(address from, address to, uint256 value) external override returns (bool) {
-        require(balanceOf[from] >= value, "WETH::transferFrom: transfer amount exceeds balance");
+        uint256 balance = balanceOf[from];
+        require(balance >= value, "WETH::transferFrom: transfer amount exceeds balance");
         require(to != address(this), "WETH::transferFrom: invalid recipient");
 
         if (from != msg.sender) {
@@ -260,7 +261,7 @@ contract WETH10 is IWETH10 {
             }
         }
 
-        balanceOf[from] -= value;
+        balanceOf[from] = balance - value;
         balanceOf[to] += value;
 
         emit Transfer(from, to, value);
