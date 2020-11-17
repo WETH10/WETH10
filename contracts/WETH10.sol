@@ -4,6 +4,7 @@
 pragma solidity 0.7.0;
 
 import "./IWETH10.sol";
+import "./SafeMath.sol";
 
 
 interface ERC677Receiver {
@@ -23,6 +24,7 @@ interface WETH9Like {
 /// `withdraw` Ether from WETH10, which will burn Wrapped Ether in your wallet. The amount of Wrapped Ether in any wallet is always identical to the
 /// balance of Ether deposited minus the Ether withdrawn with that specific wallet.
 contract WETH10 is IWETH10 {
+    using SafeMath for uint256;
 
     string public constant name = "Wrapped Ether v10";
     string public constant symbol = "WETH10";
@@ -115,9 +117,7 @@ contract WETH10 is IWETH10 {
     /// Requirements:
     ///   - caller account must have at least `value` balance of WETH10 token.
     function withdraw(uint256 value) external override {
-        uint256 balance = balanceOf[msg.sender];
-        require(balance >= value, "WETH::withdraw: withdraw amount exceeds balance");
-        balanceOf[msg.sender] = balance - value;
+        balanceOf[msg.sender] = balanceOf[msg.sender].sub(value, "WETH::withdraw: withdraw amount exceeds balance");
 
         (bool success, ) = msg.sender.call{value: value}("");
         require(success, "WETH::withdraw: Ether transfer failed");
@@ -130,10 +130,8 @@ contract WETH10 is IWETH10 {
     /// Requirements:
     ///   - caller account must have at least `value` balance of WETH10 token.
     function withdrawTo(address to, uint256 value) external override {
-        uint256 balance = balanceOf[msg.sender];
-        require(balance >= value, "WETH::withdrawTo: withdraw amount exceeds balance");
         require(to != address(this), "WETH::withdrawTo: invalid recipient");
-        balanceOf[msg.sender] = balance - value;
+        balanceOf[msg.sender] = balanceOf[msg.sender].sub(value, "WETH::withdrawTo: withdraw amount exceeds balance");
 
         (bool success, ) = to.call{value: value}("");
         require(success, "WETH::withdrawTo: Ether transfer failed");
@@ -149,7 +147,6 @@ contract WETH10 is IWETH10 {
     ///   - `from` account must have at least `value` balance of WETH10 token.
     ///   - `from` account must have approved caller to spend at least `value` of WETH10 token, unless `from` and caller are the same account.
     function withdrawFrom(address from, address to, uint256 value) external override {
-        require(balanceOf[from] >= value, "WETH::withdrawFrom: withdraw amount exceeds balance");
         require(to != address(this), "WETH::withdrawFrom: invalid recipient");
         
         if (from != msg.sender) {
@@ -160,7 +157,8 @@ contract WETH10 is IWETH10 {
                 emit Approval(from, msg.sender, allowed - value);
             }
         }
-        balanceOf[from] -= value;
+        balanceOf[from] = balanceOf[from].sub(value, "WETH::withdrawFrom: withdraw amount exceeds balance");
+        
 
         (bool success, ) = to.call{value: value}("");
         require(success, "WETH::withdrawFrom: Ether transfer failed");
@@ -227,11 +225,9 @@ contract WETH10 is IWETH10 {
     /// Requirements:
     ///   - caller account must have at least `value` WETH10 token.
     function transfer(address to, uint256 value) external override returns (bool) {
-        uint256 balance = balanceOf[msg.sender];
-        require(balance >= value, "WETH::transfer: transfer amount exceeds balance");
         require(to != address(this), "WETH::transfer: invalid recipient");
 
-        balanceOf[msg.sender] = balance - value;
+        balanceOf[msg.sender] = balanceOf[msg.sender].sub(value, "WETH::transfer: transfer amount exceeds balance");
         balanceOf[to] += value;
 
         emit Transfer(msg.sender, to, value);
@@ -248,8 +244,6 @@ contract WETH10 is IWETH10 {
     /// - owner account (`from`) must have at least `value` WETH10 token.
     /// - caller account must have at least `value` allowance from account (`from`).
     function transferFrom(address from, address to, uint256 value) external override returns (bool) {
-        uint256 balance = balanceOf[from];
-        require(balance >= value, "WETH::transferFrom: transfer amount exceeds balance");
         require(to != address(this), "WETH::transferFrom: invalid recipient");
 
         if (from != msg.sender) {
@@ -261,7 +255,7 @@ contract WETH10 is IWETH10 {
             }
         }
 
-        balanceOf[from] = balance - value;
+        balanceOf[from] = balanceOf[from].sub(value, "WETH::transferFrom: transfer amount exceeds balance");
         balanceOf[to] += value;
 
         emit Transfer(from, to, value);
@@ -276,11 +270,9 @@ contract WETH10 is IWETH10 {
     ///   - caller account must have at least `value` WETH10 token.
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function transferAndCall(address to, uint value, bytes calldata data) external override returns (bool success) {
-        uint256 balance = balanceOf[msg.sender];
-        require(balance >= value, "WETH::transferAndCall: transfer amount exceeds balance");
         require(to != address(this), "WETH::transferAndCall: invalid recipient");
 
-        balanceOf[msg.sender] = balance - value;
+        balanceOf[msg.sender] = balanceOf[msg.sender].sub(value, "WETH::transferAndCall: transfer amount exceeds balance");
         balanceOf[to] += value;
 
         emit Transfer(msg.sender, to, value);
