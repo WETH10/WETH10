@@ -149,7 +149,8 @@ contract WETH10 is IWETH10 {
     ///   - `from` account must have at least `value` balance of WETH10 token.
     ///   - `from` account must have approved caller to spend at least `value` of WETH10 token, unless `from` and caller are the same account.
     function withdrawFrom(address from, address to, uint256 value) external override {
-        require(balanceOf[from] >= value, "WETH::withdrawFrom: withdraw amount exceeds balance");
+        uint256 balance = balanceOf[from];
+        require(balance >= value, "WETH::withdrawFrom: withdraw amount exceeds balance");
         require(to != address(this), "WETH::withdrawFrom: invalid recipient");
         
         if (from != msg.sender) {
@@ -160,7 +161,7 @@ contract WETH10 is IWETH10 {
                 emit Approval(from, msg.sender, allowed - value);
             }
         }
-        balanceOf[from] -= value;
+        balanceOf[from] = balance - value;
 
         (bool success, ) = to.call{value: value}("");
         require(success, "WETH::withdrawFrom: Ether transfer failed");
