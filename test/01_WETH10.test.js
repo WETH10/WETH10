@@ -1,7 +1,7 @@
 const WETH9 = artifacts.require('WETH9')
 const WETH10 = artifacts.require('WETH10')
 const { signERC2612Permit } = require('eth-permit')
-const TestERC677Receiver = artifacts.require('TestERC677Receiver')
+const TestTransferReceiver = artifacts.require('TestTransferReceiver')
 
 const { BN, expectRevert } = require('@openzeppelin/test-helpers')
 const { web3 } = require('@openzeppelin/test-helpers/src/setup')
@@ -55,7 +55,7 @@ contract('WETH10', (accounts) => {
     })
 
     it('deposits with depositToAndCall', async () => {
-      const receiver = await TestERC677Receiver.new()
+      const receiver = await TestTransferReceiver.new()
       await weth10.depositToAndCall(receiver.address, '0x11', { from: user1, value: 1 })
 
       const events = await receiver.getPastEvents()
@@ -123,7 +123,7 @@ contract('WETH10', (accounts) => {
       })
 
       it('transfers with transferAndCall', async () => {
-        const receiver = await TestERC677Receiver.new()
+        const receiver = await TestTransferReceiver.new()
         await weth10.transferAndCall(receiver.address, 1, '0x11', { from: user1 })
 
         const events = await receiver.getPastEvents()
@@ -144,7 +144,7 @@ contract('WETH10', (accounts) => {
       it('should not transfer beyond balance', async () => {
         await expectRevert(weth10.transfer(user2, 100, { from: user1 }), 'WETH::transfer: transfer amount exceeds balance')
         await expectRevert(weth10.transferFrom(user1, user2, 100, { from: user1 }), 'WETH::transferFrom: transfer amount exceeds balance')
-        const receiver = await TestERC677Receiver.new()
+        const receiver = await TestTransferReceiver.new()
         await expectRevert(weth10.transferAndCall(receiver.address, 100, '0x11', { from: user1 }), 'WETH::transferAndCall: transfer amount exceeds balance')
       })
 
@@ -153,6 +153,19 @@ contract('WETH10', (accounts) => {
         await weth10.approve(user2, 1, { from: user1 })
         const allowanceAfter = await weth10.allowance(user1, user2)
         allowanceAfter.toString().should.equal(allowanceBefore.add(new BN('1')).toString())
+      })
+
+      it('approves with approveAndCall', async () => {
+        const receiver = await TestTransferReceiver.new()
+        await weth10.approveAndCall(receiver.address, 1, '0x11', { from: user1 })
+
+        const events = await receiver.getPastEvents()
+        events.length.should.equal(1)
+        events[0].event.should.equal('ApprovalReceived')
+        events[0].returnValues.token.should.equal(weth10.address)
+        events[0].returnValues.spender.should.equal(user1)
+        events[0].returnValues.value.should.equal('1')
+        events[0].returnValues.data.should.equal('0x11')
       })
 
       it('approves to increase allowance with permit', async () => {

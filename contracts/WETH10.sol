@@ -6,8 +6,12 @@ pragma solidity 0.7.0;
 import "./IWETH10.sol";
 
 
-interface ERC677Receiver {
+interface TransferReceiver {
     function onTokenTransfer(address, uint, bytes calldata) external;
+}
+
+interface ApprovalReceiver {
+    function onTokenApproval(address, uint, bytes calldata) external;
 }
 
 interface FlashMinterLike {
@@ -87,7 +91,7 @@ contract WETH10 is IWETH10 {
         balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
 
-        ERC677Receiver(to).onTokenTransfer(msg.sender, msg.value, data);
+        TransferReceiver(to).onTokenTransfer(msg.sender, msg.value, data);
         return true;
     }
 
@@ -171,6 +175,19 @@ contract WETH10 is IWETH10 {
     function approve(address spender, uint256 value) external override returns (bool) {
         allowance[msg.sender][spender] = value;
         emit Approval(msg.sender, spender, value);
+        return true;
+    }
+
+    /// @dev Sets `value` as allowance of `spender` account over caller account's WETH10 token,
+    /// after which a call is executed on `spender` with the `data` parameter.
+    /// Returns boolean value indicating whether operation succeeded.
+    /// Emits {Approval} event.
+    /// For more information on approveAndCall format, see https://github.com/ethereum/EIPs/issues/677.
+    function approveAndCall(address spender, uint256 value, bytes calldata data) external override returns (bool) {
+        allowance[msg.sender][spender] = value;
+        emit Approval(msg.sender, spender, value);
+
+        ApprovalReceiver(spender).onTokenApproval(msg.sender, value, data);
         return true;
     }
 
@@ -279,7 +296,7 @@ contract WETH10 is IWETH10 {
 
         emit Transfer(msg.sender, to, value);
 
-        ERC677Receiver(to).onTokenTransfer(msg.sender, value, data);
+        TransferReceiver(to).onTokenTransfer(msg.sender, value, data);
         return true;
     }
 }
