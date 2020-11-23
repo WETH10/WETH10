@@ -115,11 +115,39 @@ contract('WETH10', (accounts) => {
         balanceAfter.toString().should.equal(balanceBefore.add(new BN('1')).toString())
       })
 
+      it('withdraws ether by transferring to address(0)', async () => {
+        const balanceBefore = await weth10.balanceOf(user1)
+        await weth10.transfer('0x0000000000000000000000000000000000000000', 1, { from: user1 })
+        const balanceAfter = await weth10.balanceOf(user1)
+        balanceAfter.toString().should.equal(balanceBefore.sub(new BN('1')).toString())
+      })
+
+      it('withdraws ether by transferring to weth contract', async () => {
+        const balanceBefore = await weth10.balanceOf(user1)
+        await weth10.transfer(weth10.address, 1, { from: user1 })
+        const balanceAfter = await weth10.balanceOf(user1)
+        balanceAfter.toString().should.equal(balanceBefore.sub(new BN('1')).toString())
+      })
+
       it('transfers ether using transferFrom', async () => {
         const balanceBefore = await weth10.balanceOf(user2)
         await weth10.transferFrom(user1, user2, 1, { from: user1 })
         const balanceAfter = await weth10.balanceOf(user2)
         balanceAfter.toString().should.equal(balanceBefore.add(new BN('1')).toString())
+      })
+
+      it('withdraws ether by transferring from someone to address(0)', async () => {
+        const balanceBefore = await weth10.balanceOf(user1)
+        await weth10.transferFrom(user1, '0x0000000000000000000000000000000000000000', 1, { from: user1 })
+        const balanceAfter = await weth10.balanceOf(user1)
+        balanceAfter.toString().should.equal(balanceBefore.sub(new BN('1')).toString())
+      })
+
+      it('withdraws ether by transferring from someone to weth contract', async () => {
+        const balanceBefore = await weth10.balanceOf(user1)
+        await weth10.transferFrom(user1, weth10.address, 1, { from: user1 })
+        const balanceAfter = await weth10.balanceOf(user1)
+        balanceAfter.toString().should.equal(balanceBefore.sub(new BN('1')).toString())
       })
 
       it('transfers with transferAndCall', async () => {
@@ -135,11 +163,11 @@ contract('WETH10', (accounts) => {
         events[0].returnValues.data.should.equal('0x11')
       })
 
-      it('should not transfer to the contract address', async () => {
+      /* it('should not transfer to the contract address', async () => {
         await expectRevert(weth10.transfer(weth10.address, 1, { from: user1 }), 'WETH::transfer: invalid recipient')
         await expectRevert(weth10.transferFrom(user1, weth10.address, 1, { from: user1 }), 'WETH::transferFrom: invalid recipient')
         await expectRevert(weth10.transferAndCall(weth10.address, 1, '0x11', { from: user1 }), 'WETH::transferAndCall: invalid recipient')
-      })
+      }) */
 
       it('should not transfer beyond balance', async () => {
         await expectRevert(weth10.transfer(user2, 100, { from: user1 }), 'WETH::transfer: transfer amount exceeds balance')
