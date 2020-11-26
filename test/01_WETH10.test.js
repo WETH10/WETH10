@@ -46,14 +46,6 @@ contract('WETH10', (accounts) => {
       balanceAfter.toString().should.equal(balanceBefore.add(new BN('1')).toString())
     })
 
-    it('should not depositTo to the contract address', async () => {
-      await expectRevert(weth10.depositTo(weth10.address, { value: 1, from: user1 }), 'WETH::depositTo: invalid recipient')
-    })
-
-    it('should not depositToAndCall to the contract address', async () => {
-      await expectRevert(weth10.depositToAndCall(weth10.address, '0x11', { from: user1, value: 1 }), 'WETH::depositToAndCall: invalid recipient')
-    })
-
     it('deposits with depositToAndCall', async () => {
       const receiver = await TestERC677Receiver.new()
       await weth10.depositToAndCall(receiver.address, '0x11', { from: user1, value: 1 })
@@ -97,11 +89,6 @@ contract('WETH10', (accounts) => {
         toBalanceAfter.toString().should.equal(toBalanceBefore.add(new BN('1')).toString())
       })
 
-      it('should not withdraw to the contract address', async () => {
-        await expectRevert(weth10.withdrawTo(weth10.address, 1, { from: user1 }), 'WETH::withdrawTo: invalid recipient')
-        await expectRevert(weth10.withdrawFrom(user1, weth10.address, 1, { from: user1 }), 'WETH::withdrawFrom: invalid recipient')
-      })
-
       it('should not withdraw beyond balance', async () => {
         await expectRevert(weth10.withdraw(100, { from: user1 }), 'WETH::withdraw: withdraw amount exceeds balance')
         await expectRevert(weth10.withdrawTo(user2, 100, { from: user1 }), 'WETH::withdrawTo: withdraw amount exceeds balance')
@@ -133,12 +120,6 @@ contract('WETH10', (accounts) => {
         events[0].returnValues.sender.should.equal(user1)
         events[0].returnValues.value.should.equal('1')
         events[0].returnValues.data.should.equal('0x11')
-      })
-
-      it('should not transfer to the contract address', async () => {
-        await expectRevert(weth10.transfer(weth10.address, 1, { from: user1 }), 'WETH::transfer: invalid recipient')
-        await expectRevert(weth10.transferFrom(user1, weth10.address, 1, { from: user1 }), 'WETH::transferFrom: invalid recipient')
-        await expectRevert(weth10.transferAndCall(weth10.address, 1, '0x11', { from: user1 }), 'WETH::transferAndCall: invalid recipient')
       })
 
       it('should not transfer beyond balance', async () => {

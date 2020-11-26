@@ -31,11 +31,11 @@ interface IWETH10 is IERC20, IERC2612 {
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function depositToAndCall(address to, bytes calldata data) external payable returns (bool success);
 
-    /// @dev Flash mints WETH10 token and burns from caller account.
+    /// @dev Flash mints WETH10 token, which needs to be returned to the WETH10 contract to resolve.
     /// The flash minted WETH10 is not backed by real Ether, but can be withdrawn as such up to the Ether balance of this contract.
     /// Arbitrary data can be passed as a bytes calldata parameter.
     /// Emits two {Transfer} events for minting and burning of the flash minted amount.
-    function flashMint(uint112 value, bytes calldata data) external;
+    function flashMint(address receiver, uint256 value, bytes calldata data) external;
 
     /// @dev Burn `value` WETH10 token from caller account and withdraw matching ether to the same.
     /// Emits {Transfer} event to reflect WETH10 token burn of `value` WETH10 token to zero address from caller account. 

@@ -10,8 +10,9 @@ interface ERC677Receiver {
     function onTokenTransfer(address, uint, bytes calldata) external;
 }
 
+// To be proposed as an ERC standard
 interface FlashMinterLike {
-    function executeOnFlashMint(bytes calldata) external;
+    function onFlashMint(address user, uint256 value, uint256 fee, bytes calldata) external;
 }
 
 interface WETH9Like {
@@ -68,7 +69,6 @@ contract WETH10 is IWETH10 {
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to `to` account.
     function depositTo(address to) external override payable {
         require(address(this).balance + flashSupply <= type(uint112).max, "WETH::depositTo: supply limit exceeded");
-        require(to != address(this), "WETH::depositTo: invalid recipient");
         balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
     }
@@ -83,7 +83,6 @@ contract WETH10 is IWETH10 {
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function depositToAndCall(address to, bytes calldata data) external override payable returns (bool success) {
         require(address(this).balance + flashSupply <= type(uint112).max, "WETH::depositToAndCall: supply limit exceeded");
-        require(to != address(this), "WETH::depositToAndCall: invalid recipient");
         balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
 
@@ -91,23 +90,25 @@ contract WETH10 is IWETH10 {
         return true;
     }
 
-    /// @dev Flash mints WETH10 token and burns from caller account.
+    /// @dev Mints `value` WETH10 tokens to the receiver address.
+    /// By the end of the transaction, `value` WETH10 tokens will be burned from this contract.
     /// The flash minted WETH10 is not backed by real Ether, but can be withdrawn as such up to the Ether balance of this contract.
     /// Arbitrary data can be passed as a bytes calldata parameter.
     /// Emits two {Transfer} events for minting and burning of the flash minted amount.
-    function flashMint(uint112 value, bytes calldata data) external override {
+    function flashMint(address receiver, uint256 value, bytes calldata data) external override {
+        require(value <= type(uint112).max, "WETH::flashMint: flash mint limit exceeded");
         flashSupply += value;
         require(address(this).balance + flashSupply <= type(uint112).max, "WETH::flashMint: supply limit exceeded");
-        balanceOf[msg.sender] += value;
-        emit Transfer(address(0), msg.sender, value);
+        balanceOf[receiver] += value;
+        emit Transfer(address(0), receiver, value);
 
-        FlashMinterLike(msg.sender).executeOnFlashMint(data);
+        FlashMinterLike(receiver).onFlashMint(msg.sender, value, 0, data);
 
-        uint256 balance = balanceOf[msg.sender];
+        uint256 balance = balanceOf[address(this)];
         require(balance >= value, "WETH::flashMint: not enough balance to resolve");
-        balanceOf[msg.sender] = balance - value;
+        balanceOf[address(this)] = balance - value;
         flashSupply -= value;
-        emit Transfer(msg.sender, address(0), value);
+        emit Transfer(address(this), address(0), value);
     }
 
     /// @dev Burn `value` WETH10 token from caller account and withdraw matching ether to the same.
@@ -132,7 +133,6 @@ contract WETH10 is IWETH10 {
     function withdrawTo(address to, uint256 value) external override {
         uint256 balance = balanceOf[msg.sender];
         require(balance >= value, "WETH::withdrawTo: withdraw amount exceeds balance");
-        require(to != address(this), "WETH::withdrawTo: invalid recipient");
         balanceOf[msg.sender] = balance - value;
 
         (bool success, ) = to.call{value: value}("");
@@ -151,7 +151,6 @@ contract WETH10 is IWETH10 {
     function withdrawFrom(address from, address to, uint256 value) external override {
         uint256 balance = balanceOf[from];
         require(balance >= value, "WETH::withdrawFrom: withdraw amount exceeds balance");
-        require(to != address(this), "WETH::withdrawFrom: invalid recipient");
         
         if (from != msg.sender) {
             uint256 allowed = allowance[from][msg.sender];
@@ -230,7 +229,6 @@ contract WETH10 is IWETH10 {
     function transfer(address to, uint256 value) external override returns (bool) {
         uint256 balance = balanceOf[msg.sender];
         require(balance >= value, "WETH::transfer: transfer amount exceeds balance");
-        require(to != address(this), "WETH::transfer: invalid recipient");
 
         balanceOf[msg.sender] = balance - value;
         balanceOf[to] += value;
@@ -251,7 +249,6 @@ contract WETH10 is IWETH10 {
     function transferFrom(address from, address to, uint256 value) external override returns (bool) {
         uint256 balance = balanceOf[from];
         require(balance >= value, "WETH::transferFrom: transfer amount exceeds balance");
-        require(to != address(this), "WETH::transferFrom: invalid recipient");
 
         if (from != msg.sender) {
             uint256 allowed = allowance[from][msg.sender];
@@ -279,7 +276,6 @@ contract WETH10 is IWETH10 {
     function transferAndCall(address to, uint value, bytes calldata data) external override returns (bool success) {
         uint256 balance = balanceOf[msg.sender];
         require(balance >= value, "WETH::transferAndCall: transfer amount exceeds balance");
-        require(to != address(this), "WETH::transferAndCall: invalid recipient");
 
         balanceOf[msg.sender] = balance - value;
         balanceOf[to] += value;
