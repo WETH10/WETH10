@@ -223,7 +223,7 @@ contract WETH10 is IWETH10 {
     }
 
     /// @dev Moves `value` WETH10 token from caller's account to account (`to`).
-    /// A transfer to `address(0)` or `address(WETH10)` triggers a withdraw of the sent tokens.
+    /// A transfer to `address(0)` triggers a withdraw of the sent tokens.
     /// Returns boolean value indicating whether operation succeeded.
     /// Emits {Transfer} event.
     /// Requirements:
@@ -234,7 +234,7 @@ contract WETH10 is IWETH10 {
         
         balanceOf[msg.sender] = balance - value;
 
-        if(to == address(0) || to == address(this)) { // Withdraw
+        if(to == address(0)) { // Withdraw
             (bool success, ) = msg.sender.call{value: value}("");
             require(success, "WETH::transfer: Ether transfer failed");
         } else { // Transfer
@@ -248,7 +248,7 @@ contract WETH10 is IWETH10 {
 
     /// @dev Moves `value` WETH10 token from account (`from`) to account (`to`) using allowance mechanism.
     /// `value` is then deducted from caller account's allowance, unless set to `type(uint256).max`.
-    /// A transfer to `address(0)` or `address(WETH10)` triggers a withdraw of the sent tokens in favor of caller.
+    /// A transfer to `address(0)` triggers a withdraw of the sent tokens in favor of caller.
     /// Returns boolean value indicating whether operation succeeded.
     ///
     /// Emits {Transfer} and {Approval} events.
@@ -270,7 +270,7 @@ contract WETH10 is IWETH10 {
 
         balanceOf[from] = balance - value;
         
-        if(to == address(0) || to == address(this)) { // Withdraw
+        if(to == address(0)) { // Withdraw
             (bool success, ) = msg.sender.call{value: value}("");
             require(success, "WETH::transferFrom: Ether transfer failed");
         } else { // Transfer
@@ -291,7 +291,7 @@ contract WETH10 is IWETH10 {
     function transferAndCall(address to, uint value, bytes calldata data) external override returns (bool) {
         uint256 balance = balanceOf[msg.sender];
         require(balance >= value, "WETH::transferAndCall: transfer amount exceeds balance");
-        // Transfers to address(0) or address(this) will fail on the ERC677 call
+        // Transfers to address(0) will fail on the ERC677 call
 
         balanceOf[msg.sender] = balance - value;
         

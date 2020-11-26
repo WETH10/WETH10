@@ -122,13 +122,6 @@ contract('WETH10', (accounts) => {
         balanceAfter.toString().should.equal(balanceBefore.sub(new BN('1')).toString())
       })
 
-      it('withdraws ether by transferring to weth contract', async () => {
-        const balanceBefore = await weth10.balanceOf(user1)
-        await weth10.transfer(weth10.address, 1, { from: user1 })
-        const balanceAfter = await weth10.balanceOf(user1)
-        balanceAfter.toString().should.equal(balanceBefore.sub(new BN('1')).toString())
-      })
-
       it('transfers ether using transferFrom', async () => {
         const balanceBefore = await weth10.balanceOf(user2)
         await weth10.transferFrom(user1, user2, 1, { from: user1 })
@@ -139,13 +132,6 @@ contract('WETH10', (accounts) => {
       it('withdraws ether by transferring from someone to address(0)', async () => {
         const balanceBefore = await weth10.balanceOf(user1)
         await weth10.transferFrom(user1, '0x0000000000000000000000000000000000000000', 1, { from: user1 })
-        const balanceAfter = await weth10.balanceOf(user1)
-        balanceAfter.toString().should.equal(balanceBefore.sub(new BN('1')).toString())
-      })
-
-      it('withdraws ether by transferring from someone to weth contract', async () => {
-        const balanceBefore = await weth10.balanceOf(user1)
-        await weth10.transferFrom(user1, weth10.address, 1, { from: user1 })
         const balanceAfter = await weth10.balanceOf(user1)
         balanceAfter.toString().should.equal(balanceBefore.sub(new BN('1')).toString())
       })
