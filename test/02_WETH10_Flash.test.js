@@ -1,6 +1,6 @@
 const WETH9 = artifacts.require('WETH9')
 const WETH10 = artifacts.require('WETH10')
-const TestFlashMinter = artifacts.require('TestFlashMinter')
+const TestflashLoaner = artifacts.require('TestflashLoaner')
 
 const { BN, expectRevert } = require('@openzeppelin/test-helpers')
 require('chai').use(require('chai-as-promised')).should()
@@ -16,11 +16,11 @@ contract('WETH10 - Flash Minting', (accounts) => {
   beforeEach(async () => {
     weth9 = await WETH9.new({ from: deployer })
     weth10 = await WETH10.new(weth9.address, { from: deployer })
-    flash = await TestFlashMinter.new({ from: deployer })
+    flash = await TestflashLoaner.new({ from: deployer })
   })
 
   it('should do a simple flash mint', async () => {
-    await flash.flashMint(weth10.address, 1, { from: user1 })
+    await flash.flashLoan(weth10.address, 1, { from: user1 })
 
     const balanceAfter = await weth10.balanceOf(user1)
     balanceAfter.toString().should.equal(new BN('0').toString())
@@ -34,7 +34,7 @@ contract('WETH10 - Flash Minting', (accounts) => {
 
 
   it('should do a simple flash mint from an EOA', async () => {
-    await weth10.flashMint(flash.address, 1, '0x0000000000000000000000000000000000000000000000000000000000000000', { from: user1 })
+    await weth10.flashLoan(flash.address, 1, '0x0000000000000000000000000000000000000000000000000000000000000000', { from: user1 })
 
     const balanceAfter = await weth10.balanceOf(user1)
     balanceAfter.toString().should.equal(new BN('0').toString())
@@ -48,18 +48,18 @@ contract('WETH10 - Flash Minting', (accounts) => {
 
   it('cannot flash mint beyond the total supply limit', async () => {
     await weth10.deposit({ from: user1, value: '1' })
-    await expectRevert(flash.flashMint(weth10.address, MAX, { from: user1 }), 'WETH::flashMint: supply limit exceeded')
+    await expectRevert(flash.flashLoan(weth10.address, MAX, { from: user1 }), 'WETH::flashLoan: supply limit exceeded')
   })
 
   it('needs to return funds after a flash mint', async () => {
     await expectRevert(
-      flash.flashMintAndSteal(weth10.address, 1, { from: deployer }),
-      'WETH::flashMint: not enough balance to resolve'
+      flash.flashLoanAndSteal(weth10.address, 1, { from: deployer }),
+      'WETH::flashLoan: not enough balance to resolve'
     )
   })
 
   it('should do two nested flash loans', async () => {
-    await flash.flashMintAndReenter(weth10.address, 1, { from: deployer })
+    await flash.flashLoanAndReenter(weth10.address, 1, { from: deployer })
 
     const flashBalance = await flash.flashBalance()
     flashBalance.toString().should.equal('3')
@@ -71,7 +71,7 @@ contract('WETH10 - Flash Minting', (accounts) => {
     })
 
     it('should flash mint, withdraw & deposit', async () => {
-      await flash.flashMintAndWithdraw(weth10.address, 1, { from: deployer })
+      await flash.flashLoanAndWithdraw(weth10.address, 1, { from: deployer })
 
       const flashBalance = await flash.flashBalance()
       flashBalance.toString().should.equal('1')

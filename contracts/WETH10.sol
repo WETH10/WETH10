@@ -11,8 +11,8 @@ interface ERC677Receiver {
 }
 
 // To be proposed as an ERC standard
-interface FlashMinterLike {
-    function onFlashMint(address user, uint256 value, uint256 fee, bytes calldata) external;
+interface flashLoanerLike {
+    function onflashLoan(address user, uint256 value, uint256 fee, bytes calldata) external;
 }
 
 interface WETH9Like {
@@ -95,17 +95,17 @@ contract WETH10 is IWETH10 {
     /// The flash minted WETH10 is not backed by real Ether, but can be withdrawn as such up to the Ether balance of this contract.
     /// Arbitrary data can be passed as a bytes calldata parameter.
     /// Emits two {Transfer} events for minting and burning of the flash minted amount.
-    function flashMint(address receiver, uint256 value, bytes calldata data) external override {
-        require(value <= type(uint112).max, "WETH::flashMint: flash mint limit exceeded");
+    function flashLoan(address receiver, uint256 value, bytes calldata data) external override {
+        require(value <= type(uint112).max, "WETH::flashLoan: flash mint limit exceeded");
         flashSupply += value;
-        require(address(this).balance + flashSupply <= type(uint112).max, "WETH::flashMint: supply limit exceeded");
+        require(address(this).balance + flashSupply <= type(uint112).max, "WETH::flashLoan: supply limit exceeded");
         balanceOf[receiver] += value;
         emit Transfer(address(0), receiver, value);
 
-        FlashMinterLike(receiver).onFlashMint(msg.sender, value, 0, data);
+        flashLoanerLike(receiver).onflashLoan(msg.sender, value, 0, data);
 
         uint256 balance = balanceOf[address(this)];
-        require(balance >= value, "WETH::flashMint: not enough balance to resolve");
+        require(balance >= value, "WETH::flashLoan: not enough balance to resolve");
         balanceOf[address(this)] = balance - value;
         flashSupply -= value;
         emit Transfer(address(this), address(0), value);
