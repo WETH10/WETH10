@@ -240,6 +240,7 @@ contract WETH10 is IWETH10 {
     }
 
     /// @dev Moves `value` WETH10 token from caller's account to account (`to`).
+    /// A transfer to `address(0)` triggers a withdraw of the sent tokens.
     /// Returns boolean value indicating whether operation succeeded.
     /// Emits {Transfer} event.
     /// Requirements:
@@ -247,10 +248,15 @@ contract WETH10 is IWETH10 {
     function transfer(address to, uint256 value) external override returns (bool) {
         uint256 balance = balanceOf[msg.sender];
         require(balance >= value, "WETH::transfer: transfer amount exceeds balance");
-        require(to != address(this), "WETH::transfer: invalid recipient");
-
+        
         balanceOf[msg.sender] = balance - value;
-        balanceOf[to] += value;
+
+        if(to == address(0)) { // Withdraw
+            (bool success, ) = msg.sender.call{value: value}("");
+            require(success, "WETH::transfer: Ether transfer failed");
+        } else { // Transfer
+            balanceOf[to] += value;
+        }
 
         emit Transfer(msg.sender, to, value);
 
@@ -259,6 +265,7 @@ contract WETH10 is IWETH10 {
 
     /// @dev Moves `value` WETH10 token from account (`from`) to account (`to`) using allowance mechanism.
     /// `value` is then deducted from caller account's allowance, unless set to `type(uint256).max`.
+    /// A transfer to `address(0)` triggers a withdraw of the sent tokens in favor of caller.
     /// Returns boolean value indicating whether operation succeeded.
     ///
     /// Emits {Transfer} and {Approval} events.
@@ -268,7 +275,6 @@ contract WETH10 is IWETH10 {
     function transferFrom(address from, address to, uint256 value) external override returns (bool) {
         uint256 balance = balanceOf[from];
         require(balance >= value, "WETH::transferFrom: transfer amount exceeds balance");
-        require(to != address(this), "WETH::transferFrom: invalid recipient");
 
         if (from != msg.sender) {
             uint256 allowed = allowance[from][msg.sender];
@@ -280,7 +286,13 @@ contract WETH10 is IWETH10 {
         }
 
         balanceOf[from] = balance - value;
-        balanceOf[to] += value;
+        
+        if(to == address(0)) { // Withdraw
+            (bool success, ) = msg.sender.call{value: value}("");
+            require(success, "WETH::transferFrom: Ether transfer failed");
+        } else { // Transfer
+            balanceOf[to] += value;
+        }
 
         emit Transfer(from, to, value);
 
@@ -293,12 +305,13 @@ contract WETH10 is IWETH10 {
     /// Requirements:
     ///   - caller account must have at least `value` WETH10 token.
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
-    function transferAndCall(address to, uint value, bytes calldata data) external override returns (bool success) {
+    function transferAndCall(address to, uint value, bytes calldata data) external override returns (bool) {
         uint256 balance = balanceOf[msg.sender];
         require(balance >= value, "WETH::transferAndCall: transfer amount exceeds balance");
-        require(to != address(this), "WETH::transferAndCall: invalid recipient");
+        // Transfers to address(0) will fail on the ERC677 call
 
         balanceOf[msg.sender] = balance - value;
+        
         balanceOf[to] += value;
 
         emit Transfer(msg.sender, to, value);

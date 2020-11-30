@@ -34,7 +34,7 @@ contract TestFlashMinter {
         } else if (action == Action.REENTER) {
             flashMint(msg.sender, value * 2);
         } else if (action == Action.OVERSPEND) {
-            FlashMintableLike(msg.sender).transfer(address(0), 1);
+            FlashMintableLike(msg.sender).transfer(address(1), 1);
         }
     }
 
