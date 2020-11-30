@@ -6,13 +6,16 @@ pragma solidity 0.7.0;
 import "./IWETH10.sol";
 
 
-interface ERC677Receiver {
+interface TransferReceiver {
     function onTokenTransfer(address, uint, bytes calldata) external;
 }
 
-// To be proposed as an ERC standard
 interface flashLoanerLike {
     function onflashLoan(address user, uint256 value, uint256 fee, bytes calldata) external;
+}
+
+interface ApprovalReceiver {
+    function onTokenApproval(address, uint, bytes calldata) external;
 }
 
 interface WETH9Like {
@@ -86,7 +89,7 @@ contract WETH10 is IWETH10 {
         balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
 
-        ERC677Receiver(to).onTokenTransfer(msg.sender, msg.value, data);
+        TransferReceiver(to).onTokenTransfer(msg.sender, msg.value, data);
         return true;
     }
 
@@ -177,6 +180,19 @@ contract WETH10 is IWETH10 {
         return true;
     }
 
+    /// @dev Sets `value` as allowance of `spender` account over caller account's WETH10 token,
+    /// after which a call is executed on `spender` with the `data` parameter.
+    /// Returns boolean value indicating whether operation succeeded.
+    /// Emits {Approval} event.
+    /// For more information on approveAndCall format, see https://github.com/ethereum/EIPs/issues/677.
+    function approveAndCall(address spender, uint256 value, bytes calldata data) external override returns (bool) {
+        allowance[msg.sender][spender] = value;
+        emit Approval(msg.sender, spender, value);
+
+        ApprovalReceiver(spender).onTokenApproval(msg.sender, value, data);
+        return true;
+    }
+
     /// @dev Sets `value` as allowance of `spender` account over `owner` account's WETH10 token, given `owner` account's signed approval.
     /// Emits {Approval} event.
     /// Requirements:
@@ -222,6 +238,7 @@ contract WETH10 is IWETH10 {
     }
 
     /// @dev Moves `value` WETH10 token from caller's account to account (`to`).
+    /// A transfer to `address(0)` triggers a withdraw of the sent tokens.
     /// Returns boolean value indicating whether operation succeeded.
     /// Emits {Transfer} event.
     /// Requirements:
@@ -231,7 +248,13 @@ contract WETH10 is IWETH10 {
         require(balance >= value, "WETH::transfer: transfer amount exceeds balance");
 
         balanceOf[msg.sender] = balance - value;
-        balanceOf[to] += value;
+
+        if(to == address(0)) { // Withdraw
+            (bool success, ) = msg.sender.call{value: value}("");
+            require(success, "WETH::transfer: Ether transfer failed");
+        } else { // Transfer
+            balanceOf[to] += value;
+        }
 
         emit Transfer(msg.sender, to, value);
 
@@ -240,6 +263,7 @@ contract WETH10 is IWETH10 {
 
     /// @dev Moves `value` WETH10 token from account (`from`) to account (`to`) using allowance mechanism.
     /// `value` is then deducted from caller account's allowance, unless set to `type(uint256).max`.
+    /// A transfer to `address(0)` triggers a withdraw of the sent tokens in favor of caller.
     /// Returns boolean value indicating whether operation succeeded.
     ///
     /// Emits {Transfer} and {Approval} events.
@@ -260,7 +284,13 @@ contract WETH10 is IWETH10 {
         }
 
         balanceOf[from] = balance - value;
-        balanceOf[to] += value;
+        
+        if(to == address(0)) { // Withdraw
+            (bool success, ) = msg.sender.call{value: value}("");
+            require(success, "WETH::transferFrom: Ether transfer failed");
+        } else { // Transfer
+            balanceOf[to] += value;
+        }
 
         emit Transfer(from, to, value);
 
@@ -273,16 +303,18 @@ contract WETH10 is IWETH10 {
     /// Requirements:
     ///   - caller account must have at least `value` WETH10 token.
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
-    function transferAndCall(address to, uint value, bytes calldata data) external override returns (bool success) {
+    function transferAndCall(address to, uint value, bytes calldata data) external override returns (bool) {
         uint256 balance = balanceOf[msg.sender];
         require(balance >= value, "WETH::transferAndCall: transfer amount exceeds balance");
+        // Transfers to address(0) will fail on the ERC677 call
 
         balanceOf[msg.sender] = balance - value;
+        
         balanceOf[to] += value;
 
         emit Transfer(msg.sender, to, value);
 
-        ERC677Receiver(to).onTokenTransfer(msg.sender, value, data);
+        TransferReceiver(to).onTokenTransfer(msg.sender, value, data);
         return true;
     }
 }

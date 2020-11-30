@@ -29,7 +29,15 @@ interface IWETH10 is IERC20, IERC2612 {
     /// Requirements:
     ///   - caller account must have at least `value` WETH10 token and transfer to account (`to`) cannot cause overflow.
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
-    function depositToAndCall(address to, bytes calldata data) external payable returns (bool success);
+    function depositToAndCall(address to, bytes calldata data) external payable returns (bool);
+
+
+    /// @dev Sets `value` as allowance of `spender` account over caller account's WETH10 token,
+    /// after which a call is executed on `spender` with the `data` parameter.
+    /// Returns boolean value indicating whether operation succeeded.
+    /// Emits {Approval} event.
+    /// For more information on approveAndCall format, see https://github.com/ethereum/EIPs/issues/677.
+    function approveAndCall(address spender, uint256 value, bytes calldata data) external returns (bool);
 
     /// @dev Flash mints WETH10 token, which needs to be returned to the WETH10 contract to resolve.
     /// The flash minted WETH10 is not backed by real Ether, but can be withdrawn as such up to the Ether balance of this contract.
@@ -64,6 +72,6 @@ interface IWETH10 is IERC20, IERC2612 {
     /// Requirements:
     ///   - caller account must have at least `value` WETH10 token.
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
-    function transferAndCall(address to, uint value, bytes calldata data) external returns (bool success);
+    function transferAndCall(address to, uint value, bytes calldata data) external returns (bool);
 }
 
