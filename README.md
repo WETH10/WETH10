@@ -28,10 +28,7 @@ The `depositAndCall` and `transferAndCall` functions allow to deposit Ether or t
 
 This function will call `onTokenTransfer` on the recipient address, receiving and passing along a `bytes` parameter which can be used by the calling contract to process the callback. See [EIP667](https://github.com/ethereum/EIPs/issues/677).
 
-## Flash Minting
-This contract allows to `flashMint` an arbitrary amount of Wrapped Ether, unbacked by real Ether, with the condition that it is burned before the end of the transaction. 
+## Flash Loans
+This contract allows to `flashLoan` an arbitrary amount of Wrapped Ether, unbacked by real Ether, with the condition that it is burned before the end of the transaction. No fees are charged.
 
-This function will call `executeOnFlashMint` on the calling address, receiving and passing along a `bytes` parameter which can be used by the calling contract to process the callback.
-
-## Convert to WETH9
-This contract allows to convert WETH10 into WETH9 at a minimal cost, using `convert` functions. Combining `convertFrom` with `permit` this conversion can be done at no cost to the WETH10 holder.
+This function will call `onFlashLoan` on the calling address, receiving and passing along a `bytes` parameter which can be used by the calling contract to process the callback.
