@@ -175,9 +175,7 @@ contract WETH10 is IWETH10 {
     /// Returns boolean value indicating whether operation succeeded.
     /// Emits {Approval} event.
     function approve(address spender, uint256 value) external override returns (bool) {
-        allowance[msg.sender][spender] = value;
-        emit Approval(msg.sender, spender, value);
-        return true;
+        return _approve(msg.sender, spender, value);
     }
 
     /// @dev Sets `value` as allowance of `spender` account over caller account's WETH10 token,
@@ -185,11 +183,15 @@ contract WETH10 is IWETH10 {
     /// Returns boolean value indicating whether operation succeeded.
     /// Emits {Approval} event.
     /// For more information on approveAndCall format, see https://github.com/ethereum/EIPs/issues/677.
-    function approveAndCall(address spender, uint256 value, bytes calldata data) external override returns (bool) {
-        allowance[msg.sender][spender] = value;
-        emit Approval(msg.sender, spender, value);
+    function approveAndCall(address spender, uint256 value, bytes calldata data) external override returns (bool result) {
+        result = _approve(msg.sender, spender, value);
 
         ApprovalReceiver(spender).onTokenApproval(msg.sender, value, data);
+    }
+
+    function _approve(address owner, address spender, uint256 value) internal returns (bool) {
+        allowance[owner][spender] = value;
+        emit Approval(owner, spender, value);
         return true;
     }
 
@@ -233,8 +235,7 @@ contract WETH10 is IWETH10 {
         address signer = ecrecover(hash, v, r, s);
         require(signer != address(0) && signer == owner, "WETH::permit: invalid permit");
 
-        allowance[owner][spender] = value;
-        emit Approval(owner, spender, value);
+        _approve(owner, spender, value);
     }
 
     /// @dev Moves `value` WETH10 token from caller's account to account (`to`).
