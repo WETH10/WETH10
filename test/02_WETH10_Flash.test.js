@@ -1,6 +1,6 @@
 const WETH9 = artifacts.require('WETH9')
 const WETH10 = artifacts.require('WETH10')
-const TestflashLoaner = artifacts.require('TestflashLoaner')
+const TestFlashLender = artifacts.require('TestFlashLender')
 
 const { BN, expectRevert } = require('@openzeppelin/test-helpers')
 require('chai').use(require('chai-as-promised')).should()
@@ -16,7 +16,7 @@ contract('WETH10 - Flash Minting', (accounts) => {
   beforeEach(async () => {
     weth9 = await WETH9.new({ from: deployer })
     weth10 = await WETH10.new(weth9.address, { from: deployer })
-    flash = await TestflashLoaner.new({ from: deployer })
+    flash = await TestFlashLender.new({ from: deployer })
   })
 
   it('should do a simple flash mint', async () => {
@@ -34,7 +34,7 @@ contract('WETH10 - Flash Minting', (accounts) => {
 
 
   it('should do a simple flash mint from an EOA', async () => {
-    await weth10.flashLoan(flash.address, 1, '0x0000000000000000000000000000000000000000000000000000000000000000', { from: user1 })
+    await weth10.flashLoan(flash.address, weth10.address, 1, '0x0000000000000000000000000000000000000000000000000000000000000000', { from: user1 })
 
     const balanceAfter = await weth10.balanceOf(user1)
     balanceAfter.toString().should.equal(new BN('0').toString())
