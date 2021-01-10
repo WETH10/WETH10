@@ -90,9 +90,9 @@ contract('WETH10', (accounts) => {
       })
 
       it('should not withdraw beyond balance', async () => {
-        await expectRevert(weth10.withdraw(100, { from: user1 }), 'WETH::withdraw: withdraw amount exceeds balance')
-        await expectRevert(weth10.withdrawTo(user2, 100, { from: user1 }), 'WETH::withdrawTo: withdraw amount exceeds balance')
-        await expectRevert(weth10.withdrawFrom(user1, user2, 100, { from: user1 }), 'WETH::withdrawFrom: withdraw amount exceeds balance')
+        await expectRevert(weth10.withdraw(100, { from: user1 }), 'WETH: burn amount exceeds balance')
+        await expectRevert(weth10.withdrawTo(user2, 100, { from: user1 }), 'WETH: burn amount exceeds balance')
+        await expectRevert(weth10.withdrawFrom(user1, user2, 100, { from: user1 }), 'WETH: burn amount exceeds balance')
       })
 
       it('transfers ether', async () => {
@@ -137,10 +137,10 @@ contract('WETH10', (accounts) => {
       })
 
       it('should not transfer beyond balance', async () => {
-        await expectRevert(weth10.transfer(user2, 100, { from: user1 }), 'WETH::transfer: transfer amount exceeds balance')
-        await expectRevert(weth10.transferFrom(user1, user2, 100, { from: user1 }), 'WETH::transferFrom: transfer amount exceeds balance')
+        await expectRevert(weth10.transfer(user2, 100, { from: user1 }), 'WETH: transfer amount exceeds balance')
+        await expectRevert(weth10.transferFrom(user1, user2, 100, { from: user1 }), 'WETH: transfer amount exceeds balance')
         const receiver = await TestTransferReceiver.new()
-        await expectRevert(weth10.transferAndCall(receiver.address, 100, '0x11', { from: user1 }), 'WETH::transferAndCall: transfer amount exceeds balance')
+        await expectRevert(weth10.transferAndCall(receiver.address, 100, '0x11', { from: user1 }), 'WETH: transfer amount exceeds balance')
       })
 
       it('approves to increase allowance', async () => {
@@ -174,7 +174,7 @@ contract('WETH10', (accounts) => {
         const permitResult = await signERC2612Permit(web3.currentProvider, weth10.address, user1, user2, '1')
         await expectRevert(weth10.permit(
           user1, user2, '1', 0, permitResult.v, permitResult.r, permitResult.s),
-          'WETH::permit: Expired permit'
+          'WETH: Expired permit'
         )
       })
 
@@ -182,7 +182,7 @@ contract('WETH10', (accounts) => {
         const permitResult = await signERC2612Permit(web3.currentProvider, weth10.address, user1, user2, '1')
         await expectRevert(
           weth10.permit(user1, user2, '2', permitResult.deadline, permitResult.v, permitResult.r, permitResult.s),
-          'WETH::permit: invalid permit'
+          'WETH: invalid permit'
         )
       })
 
@@ -199,7 +199,7 @@ contract('WETH10', (accounts) => {
         })
 
         it('should not transfer beyond allowance', async () => {
-          await expectRevert(weth10.transferFrom(user1, user2, 2, { from: user2 }), 'WETH::transferFrom: transfer amount exceeds allowance')
+          await expectRevert(weth10.transferFrom(user1, user2, 2, { from: user2 }), 'WETH: request exceeds allowance')
         })
   
         it('withdraws ether using withdrawFrom and allowance', async () => {
@@ -216,7 +216,7 @@ contract('WETH10', (accounts) => {
         })
 
         it('should not withdraw beyond allowance', async () => {
-          await expectRevert(weth10.withdrawFrom(user1, user3, 2, { from: user2 }), 'WETH::withdrawFrom: withdraw amount exceeds allowance')
+          await expectRevert(weth10.withdrawFrom(user1, user3, 2, { from: user2 }), 'WETH: request exceeds allowance')
         })
       })
 
