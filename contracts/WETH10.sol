@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2015, 2016, 2017 Dapphub
 // Adapted by Ethereum Community 2020
-pragma solidity 0.7.0;
+pragma solidity 0.7.6;
 
 import "./interfaces/IWETH10.sol";
 import "./interfaces/IERC3156FlashBorrower.sol";
