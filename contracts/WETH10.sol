@@ -3,25 +3,17 @@
 // Adapted by Ethereum Community 2020
 pragma solidity 0.7.0;
 
-import "./IWETH10.sol";
+import "./interfaces/IWETH10.sol";
+import "./interfaces/IERC3156FlashBorrower.sol";
 
-
-interface TransferReceiver {
+interface ITransferReceiver {
     function onTokenTransfer(address, uint, bytes calldata) external;
 }
 
-interface flashLoanerLike {
-    function onflashLoan(address user, uint256 value, uint256 fee, bytes calldata) external;
-}
-
-interface ApprovalReceiver {
+interface IApprovalReceiver {
     function onTokenApproval(address, uint, bytes calldata) external;
 }
 
-interface WETH9Like {
-    function deposit() external payable;
-    function transfer(address, uint) external returns (bool);
-}
 
 /// @dev WETH10 is an Ether ERC20 wrapper. You can `deposit` Ether and obtain Wrapped Ether which can then be operated as an ERC20 token. You can
 /// `withdraw` Ether from WETH10, which will burn Wrapped Ether in your wallet. The amount of Wrapped Ether in any wallet is always identical to the
@@ -45,25 +37,25 @@ contract WETH10 is IWETH10 {
     mapping (address => mapping (address => uint256)) public override allowance;
 
     /// @dev Current amount of flash minted WETH.
-    uint256 public override flashSupply;
+    uint256 public override flashMinted;
 
     /// @dev Fallback, `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
     receive() external payable {
-        require(address(this).balance + flashSupply <= type(uint112).max, "WETH::receive: supply limit exceeded");
+        require(address(this).balance + flashMinted <= type(uint112).max, "WETH::receive: supply limit exceeded");
         balanceOf[msg.sender] += msg.value;
         emit Transfer(address(0), msg.sender, msg.value);
     }
 
     /// @dev Returns the total supply of WETH10 as the Ether held in this contract.
     function totalSupply() external view override returns(uint256) {
-        return address(this).balance + flashSupply;
+        return address(this).balance + flashMinted;
     }
 
     /// @dev `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
     function deposit() external override payable {
-        require(address(this).balance + flashSupply <= type(uint112).max, "WETH::deposit: supply limit exceeded");
+        require(address(this).balance + flashMinted <= type(uint112).max, "WETH::deposit: supply limit exceeded");
         balanceOf[msg.sender] += msg.value;
         emit Transfer(address(0), msg.sender, msg.value);
     }
@@ -71,7 +63,7 @@ contract WETH10 is IWETH10 {
     /// @dev `msg.value` of ether sent to contract grants `to` account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to `to` account.
     function depositTo(address to) external override payable {
-        require(address(this).balance + flashSupply <= type(uint112).max, "WETH::depositTo: supply limit exceeded");
+        require(address(this).balance + flashMinted <= type(uint112).max, "WETH::depositTo: supply limit exceeded");
         balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
     }
@@ -85,12 +77,23 @@ contract WETH10 is IWETH10 {
     ///   - caller account must have at least `value` WETH10 token and transfer to account (`to`) cannot cause overflow.
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function depositToAndCall(address to, bytes calldata data) external override payable returns (bool success) {
-        require(address(this).balance + flashSupply <= type(uint112).max, "WETH::depositToAndCall: supply limit exceeded");
+        require(address(this).balance + flashMinted <= type(uint112).max, "WETH::depositToAndCall: supply limit exceeded");
         balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
 
-        TransferReceiver(to).onTokenTransfer(msg.sender, msg.value, data);
+        ITransferReceiver(to).onTokenTransfer(msg.sender, msg.value, data);
         return true;
+    }
+
+    /// @dev Return the amount of WETH10 that can be flash lended.
+    function flashSupply(address token) external view override returns (uint256) {
+        return token == address(this) ? type(uint112).max - address(this).balance - flashMinted : 0; // Can't underflow - L108
+    }
+
+    /// @dev Return the fee (zero) for flash lending an amount of WETH10.
+    function flashFee(address token, uint256) external view override returns (uint256) {
+        require(token == address(this), "WETH::flashFee: flash mint only WETH10");
+        return 0;
     }
 
     /// @dev Mints `value` WETH10 tokens to the receiver address.
@@ -98,19 +101,20 @@ contract WETH10 is IWETH10 {
     /// The flash minted WETH10 is not backed by real Ether, but can be withdrawn as such up to the Ether balance of this contract.
     /// Arbitrary data can be passed as a bytes calldata parameter.
     /// Emits two {Transfer} events for minting and burning of the flash minted amount.
-    function flashLoan(address receiver, uint256 value, bytes calldata data) external override {
+    function flashLoan(address receiver, address token, uint256 value, bytes calldata data) external override {
+        require(token == address(this), "WETH::flashLoan: flash mint only WETH10");
         require(value <= type(uint112).max, "WETH::flashLoan: flash mint limit exceeded");
-        flashSupply += value;
-        require(address(this).balance + flashSupply <= type(uint112).max, "WETH::flashLoan: supply limit exceeded");
+        flashMinted += value;
+        require(address(this).balance + flashMinted <= type(uint112).max, "WETH::flashLoan: supply limit exceeded");
         balanceOf[receiver] += value;
         emit Transfer(address(0), receiver, value);
 
-        flashLoanerLike(receiver).onflashLoan(msg.sender, value, 0, data);
+        IERC3156FlashBorrower(receiver).onFlashLoan(msg.sender, address(this), value, 0, data);
 
         uint256 balance = balanceOf[address(this)];
         require(balance >= value, "WETH::flashLoan: not enough balance to resolve");
         balanceOf[address(this)] = balance - value;
-        flashSupply -= value;
+        flashMinted -= value;
         emit Transfer(address(this), address(0), value);
     }
 
@@ -189,7 +193,7 @@ contract WETH10 is IWETH10 {
         allowance[msg.sender][spender] = value;
         emit Approval(msg.sender, spender, value);
 
-        ApprovalReceiver(spender).onTokenApproval(msg.sender, value, data);
+        IApprovalReceiver(spender).onTokenApproval(msg.sender, value, data);
         return true;
     }
 
@@ -314,7 +318,7 @@ contract WETH10 is IWETH10 {
 
         emit Transfer(msg.sender, to, value);
 
-        TransferReceiver(to).onTokenTransfer(msg.sender, value, data);
+        ITransferReceiver(to).onTokenTransfer(msg.sender, value, data);
         return true;
     }
 }
