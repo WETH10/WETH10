@@ -42,9 +42,7 @@ contract WETH10 is IWETH10 {
     /// @dev Fallback, `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
     receive() external payable {
-        require(address(this).balance + flashMinted <= type(uint112).max, "WETH: supply limit exceeded");
-        balanceOf[msg.sender] += msg.value;
-        emit Transfer(address(0), msg.sender, msg.value);
+        _mintTo(msg.sender, msg.value);
     }
 
     /// @dev Returns the total supply of WETH10 as the Ether held in this contract.
@@ -55,17 +53,13 @@ contract WETH10 is IWETH10 {
     /// @dev `msg.value` of ether sent to contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
     function deposit() external override payable {
-        require(address(this).balance + flashMinted <= type(uint112).max, "WETH: supply limit exceeded");
-        balanceOf[msg.sender] += msg.value;
-        emit Transfer(address(0), msg.sender, msg.value);
+        _mintTo(msg.sender, msg.value);
     }
 
     /// @dev `msg.value` of ether sent to contract grants `to` account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to `to` account.
     function depositTo(address to) external override payable {
-        require(address(this).balance + flashMinted <= type(uint112).max, "WETH: supply limit exceeded");
-        balanceOf[to] += msg.value;
-        emit Transfer(address(0), to, msg.value);
+        _mintTo(to, msg.value);
     }
 
 
@@ -77,9 +71,7 @@ contract WETH10 is IWETH10 {
     ///   - caller account must have at least `value` WETH10 token and transfer to account (`to`) cannot cause overflow.
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function depositToAndCall(address to, bytes calldata data) external override payable returns (bool success) {
-        require(address(this).balance + flashMinted <= type(uint112).max, "WETH: supply limit exceeded");
-        balanceOf[to] += msg.value;
-        emit Transfer(address(0), to, msg.value);
+        _mintTo(to, msg.value);
         ITransferReceiver(to).onTokenTransfer(msg.sender, msg.value, data);
         return true; // TODO: Return the output of previous line
     }
@@ -125,7 +117,6 @@ contract WETH10 is IWETH10 {
         _burnFrom(msg.sender, value);
         (bool success, ) = msg.sender.call{value: value}("");
         require(success, "WETH: Ether transfer failed");
-        emit Transfer(msg.sender, address(0), value);
     }
 
     /// @dev Burn `value` WETH10 token from caller account and withdraw matching ether to account (`to`).
@@ -136,7 +127,6 @@ contract WETH10 is IWETH10 {
         _burnFrom(msg.sender, value);
         (bool success, ) = to.call{value: value}("");
         require(success, "WETH: Ether transfer failed");
-        emit Transfer(msg.sender, address(0), value);
     }
 
     /// @dev Burn `value` WETH10 token from account (`from`) and withdraw matching ether to account (`to`).
@@ -150,7 +140,6 @@ contract WETH10 is IWETH10 {
         _burnFrom(from, value);
         (bool success, ) = to.call{value: value}("");
         require(success, "WETH: Ether transfer failed");
-        emit Transfer(from, address(0), value);
     }
 
     /// @dev Sets `value` as allowance of `spender` account over caller account's WETH10 token.
@@ -290,7 +279,7 @@ contract WETH10 is IWETH10 {
         return true;
     }
 
-    /// @dev Destroys `value` WETH10 token from account (`from`) to account (`to`) using allowance mechanism.
+    /// @dev Destroys `value` WETH10 token from account (`from`) using allowance mechanism.
     /// `value` is then deducted from caller account's allowance, unless set to `type(uint256).max`.
     ///
     /// Emits {Transfer} and {Approval} events.
@@ -310,6 +299,17 @@ contract WETH10 is IWETH10 {
         }
         balanceOf[from] = balance - value;
         emit Transfer(from, address(0), value);
+    }
+
+    /// @dev Creates `value` WETH10 token on account (`to`).
+    /// Requirements:
+    /// - The resulting WETH10 supply must remain below type(uint112).max.
+    ///
+    /// Emits {Transfer} event.
+    function _mintTo(address to, uint256 value) internal {
+        require(address(this).balance + flashMinted <= type(uint112).max, "WETH: supply limit exceeded");
+        balanceOf[to] += msg.value;
+        emit Transfer(address(0), to, msg.value);
     }
 }
 
