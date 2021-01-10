@@ -7,11 +7,11 @@ import "./interfaces/IWETH10.sol";
 import "./interfaces/IERC3156FlashBorrower.sol";
 
 interface ITransferReceiver {
-    function onTokenTransfer(address, uint, bytes calldata) external;
+    function onTokenTransfer(address, uint, bytes calldata) external returns (bool);
 }
 
 interface IApprovalReceiver {
-    function onTokenApproval(address, uint, bytes calldata) external;
+    function onTokenApproval(address, uint, bytes calldata) external returns (bool);
 }
 
 
@@ -72,8 +72,7 @@ contract WETH10 is IWETH10 {
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function depositToAndCall(address to, bytes calldata data) external override payable returns (bool success) {
         _mintTo(to, msg.value);
-        ITransferReceiver(to).onTokenTransfer(msg.sender, msg.value, data);
-        return true; // TODO: Return the output of previous line
+        return ITransferReceiver(to).onTokenTransfer(msg.sender, msg.value, data);
     }
 
     /// @dev Return the amount of WETH10 that can be flash lended.
@@ -150,8 +149,7 @@ contract WETH10 is IWETH10 {
     /// For more information on approveAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function approveAndCall(address spender, uint256 value, bytes calldata data) external override returns (bool) {
         _approve(msg.sender, spender, value);
-        IApprovalReceiver(spender).onTokenApproval(msg.sender, value, data);
-        return true; // TODO: Return the output of previous line
+        return IApprovalReceiver(spender).onTokenApproval(msg.sender, value, data);
     }
 
     /// @dev Sets `value` as allowance of `spender` account over `owner` account's WETH10 token, given `owner` account's signed approval.
@@ -228,8 +226,7 @@ contract WETH10 is IWETH10 {
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function transferAndCall(address to, uint value, bytes calldata data) external override returns (bool) {
         _transferFrom(msg.sender, to, value);
-        ITransferReceiver(to).onTokenTransfer(msg.sender, value, data);
-        return true; // TODO: Return the output of previous line
+        return ITransferReceiver(to).onTokenTransfer(msg.sender, value, data);
     }
 
     /// @dev Sets `value` as allowance of `spender` account over `owner` account's WETH10 token.
