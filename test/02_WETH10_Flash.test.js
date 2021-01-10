@@ -28,22 +28,8 @@ contract('WETH10 - Flash Minting', (accounts) => {
     flashBalance.toString().should.equal(new BN('1').toString())
     const flashValue = await flash.flashValue()
     flashValue.toString().should.equal(new BN('1').toString())
-    const flashUser = await flash.flashUser()
-    flashUser.toString().should.equal(flash.address)
-  })
-
-
-  it('should do a simple flash mint from an EOA', async () => {
-    await weth10.flashLoan(flash.address, weth10.address, 1, '0x0000000000000000000000000000000000000000000000000000000000000000', { from: user1 })
-
-    const balanceAfter = await weth10.balanceOf(user1)
-    balanceAfter.toString().should.equal(new BN('0').toString())
-    const flashBalance = await flash.flashBalance()
-    flashBalance.toString().should.equal(new BN('1').toString())
-    const flashValue = await flash.flashValue()
-    flashValue.toString().should.equal(new BN('1').toString())
-    const flashUser = await flash.flashUser()
-    flashUser.toString().should.equal(user1)
+    const flashSender = await flash.flashSender()
+    flashSender.toString().should.equal(flash.address)
   })
 
   it('cannot flash mint beyond the total supply limit', async () => {
@@ -54,7 +40,7 @@ contract('WETH10 - Flash Minting', (accounts) => {
   it('needs to return funds after a flash mint', async () => {
     await expectRevert(
       flash.flashLoanAndSteal(weth10.address, 1, { from: deployer }),
-      'WETH: not enough balance to resolve'
+      'WETH: request exceeds allowance'
     )
   })
 

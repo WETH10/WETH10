@@ -77,7 +77,7 @@ contract WETH10 is IWETH10 {
     }
 
     /// @dev Return the amount of WETH10 that can be flash lended.
-    function flashSupply(address token) external view override returns (uint256) {
+    function maxFlashAmount(address token) external view override returns (uint256) {
         return token == address(this) ? type(uint112).max - address(this).balance - flashMinted : 0; // Can't underflow - L108
     }
 
@@ -87,26 +87,21 @@ contract WETH10 is IWETH10 {
         return 0;
     }
 
-    /// @dev Mints `value` WETH10 tokens to the receiver address.
-    /// By the end of the transaction, `value` WETH10 tokens will be burned from this contract.
+    /// @dev Flash lends `value` WETH10 tokens to the receiver address.
+    /// By the end of the transaction, `value` WETH10 tokens will be burned from the receiver.
     /// The flash minted WETH10 is not backed by real Ether, but can be withdrawn as such up to the Ether balance of this contract.
     /// Arbitrary data can be passed as a bytes calldata parameter.
     /// Emits two {Transfer} events for minting and burning of the flash minted amount.
     function flashLoan(address receiver, address token, uint256 value, bytes calldata data) external override {
         require(token == address(this), "WETH: flash mint only WETH10");
-        require(value <= type(uint112).max, "WETH: flash mint limit exceeded");
         flashMinted += value;
-        require(address(this).balance + flashMinted <= type(uint112).max, "WETH: supply limit exceeded");
-        balanceOf[receiver] += value;
-        emit Transfer(address(0), receiver, value);
+        _mintTo(receiver, value);
 
         IERC3156FlashBorrower(receiver).onFlashLoan(msg.sender, address(this), value, 0, data);
 
-        uint256 balance = balanceOf[address(this)];
-        require(balance >= value, "WETH: not enough balance to resolve");
-        balanceOf[address(this)] = balance - value;
+        _decreaseAllowance(receiver, address(this), value);
+        _burnFrom(receiver, value);
         flashMinted -= value;
-        emit Transfer(address(this), address(0), value);
     }
 
     /// @dev Burn `value` WETH10 token from caller account and withdraw matching ether to the same.
@@ -135,6 +130,7 @@ contract WETH10 is IWETH10 {
     ///   - `from` account must have at least `value` balance of WETH10 token.
     ///   - `from` account must have approved caller to spend at least `value` of WETH10 token, unless `from` and caller are the same account.
     function withdrawFrom(address from, address payable to, uint256 value) external override {
+        if (from != msg.sender) _decreaseAllowance(from, msg.sender, value);
         _burnFrom(from, value);
         _transferEther(to, value);
     }
@@ -154,7 +150,6 @@ contract WETH10 is IWETH10 {
     /// For more information on approveAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function approveAndCall(address spender, uint256 value, bytes calldata data) external override returns (bool) {
         _approve(msg.sender, spender, value);
-
         IApprovalReceiver(spender).onTokenApproval(msg.sender, value, data);
         return true; // TODO: Return the output of previous line
     }
@@ -221,6 +216,7 @@ contract WETH10 is IWETH10 {
     /// - owner account (`from`) must have at least `value` WETH10 token.
     /// - caller account must have at least `value` allowance from account (`from`).
     function transferFrom(address from, address to, uint256 value) external override returns (bool) {
+        if (from != msg.sender) _decreaseAllowance(from, msg.sender, value);
         return _transferFrom(from, to, value);
     }
 
@@ -236,11 +232,24 @@ contract WETH10 is IWETH10 {
         return true; // TODO: Return the output of previous line
     }
 
-    /// @dev Sets `value` as allowance of `spender` account over `holder` account's WETH10 token.
+    /// @dev Sets `value` as allowance of `spender` account over `owner` account's WETH10 token.
     /// Emits {Approval} event.
     function _approve(address owner, address spender, uint256 value) internal {
         allowance[owner][spender] = value;
         emit Approval(owner, spender, value);
+    }
+
+    /// @dev Decreases the allowance of `spender` account over `owner` account's by `value` WETH10 token.
+    /// If the allowance of `spender` account over `owner` account's is type(uin112).max WETH10 token this function does nothing.
+    /// Emits {Approval} event.
+    /// Requirements:
+    /// - allowance of `spender` account over `owner must be at least `value` WETH10 token.
+    function _decreaseAllowance(address owner, address spender, uint256 value) internal {
+        uint256 allowed = allowance[owner][spender];
+        if (allowed != type(uint256).max) {
+            require(allowed >= value, "WETH: request exceeds allowance");
+            _approve(owner, spender, allowed - value);
+        }
     }
 
     /// @dev Moves `value` WETH10 token from account (`from`) to account (`to`) using allowance mechanism.
@@ -257,14 +266,6 @@ contract WETH10 is IWETH10 {
             uint256 balance = balanceOf[from];
             require(balance >= value, "WETH: transfer amount exceeds balance");
 
-            if (from != msg.sender) {
-                uint256 allowed = allowance[from][msg.sender];
-                if (allowed != type(uint256).max) {
-                    require(allowed >= value, "WETH: transfer amount exceeds allowance");
-                    _approve(from, msg.sender, allowed - value);
-                }
-            }
-
             balanceOf[from] = balance - value;
             balanceOf[to] += value;
             emit Transfer(from, to, value);
@@ -274,6 +275,23 @@ contract WETH10 is IWETH10 {
         }
         
         return true;
+    }
+
+    /// @dev Transfers `value` Ether to account (`to`).
+    function _transferEther(address payable to, uint256 value) internal {
+        (bool success, ) = to.call{value: value}("");
+        require(success, "WETH: Ether transfer failed");
+    }
+
+    /// @dev Creates `value` WETH10 token on account (`to`).
+    /// Requirements:
+    /// - The resulting WETH10 supply must remain below type(uint112).max.
+    ///
+    /// Emits {Transfer} event.
+    function _mintTo(address to, uint256 value) internal {
+        require(address(this).balance + flashMinted <= type(uint112).max, "WETH: supply limit exceeded");
+        balanceOf[to] += value;
+        emit Transfer(address(0), to, value);
     }
 
     /// @dev Destroys `value` WETH10 token from account (`from`) using allowance mechanism.
@@ -286,33 +304,8 @@ contract WETH10 is IWETH10 {
     function _burnFrom(address from, uint256 value) internal {
         uint256 balance = balanceOf[from];
         require(balance >= value, "WETH: burn amount exceeds balance");
-        
-        if (from != msg.sender) {
-            uint256 allowed = allowance[from][msg.sender];
-            if (allowed != type(uint256).max) {
-                require(allowed >= value, "WETH: burn amount exceeds allowance");
-                _approve(from, msg.sender, allowed - value);
-            }
-        }
         balanceOf[from] = balance - value;
         emit Transfer(from, address(0), value);
-    }
-
-    /// @dev Creates `value` WETH10 token on account (`to`).
-    /// Requirements:
-    /// - The resulting WETH10 supply must remain below type(uint112).max.
-    ///
-    /// Emits {Transfer} event.
-    function _mintTo(address to, uint256 value) internal {
-        require(address(this).balance + flashMinted <= type(uint112).max, "WETH: supply limit exceeded");
-        balanceOf[to] += msg.value;
-        emit Transfer(address(0), to, msg.value);
-    }
-
-    /// @dev Transfers `value` Ether to account (`to`).
-    function _transferEther(address payable to, uint256 value) internal {
-        (bool success, ) = to.call{value: value}("");
-        require(success, "WETH: Ether transfer failed");
     }
 }
 

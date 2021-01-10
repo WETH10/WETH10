@@ -199,7 +199,7 @@ contract('WETH10', (accounts) => {
         })
 
         it('should not transfer beyond allowance', async () => {
-          await expectRevert(weth10.transferFrom(user1, user2, 2, { from: user2 }), 'WETH: transfer amount exceeds allowance')
+          await expectRevert(weth10.transferFrom(user1, user2, 2, { from: user2 }), 'WETH: request exceeds allowance')
         })
   
         it('withdraws ether using withdrawFrom and allowance', async () => {
@@ -216,7 +216,7 @@ contract('WETH10', (accounts) => {
         })
 
         it('should not withdraw beyond allowance', async () => {
-          await expectRevert(weth10.withdrawFrom(user1, user3, 2, { from: user2 }), 'WETH: burn amount exceeds allowance')
+          await expectRevert(weth10.withdrawFrom(user1, user3, 2, { from: user2 }), 'WETH: request exceeds allowance')
         })
       })
 
