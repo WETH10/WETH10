@@ -115,18 +115,16 @@ contract WETH10 is IWETH10 {
     ///   - caller account must have at least `value` balance of WETH10 token.
     function withdraw(uint256 value) external override {
         _burnFrom(msg.sender, value);
-        (bool success, ) = msg.sender.call{value: value}("");
-        require(success, "WETH: Ether transfer failed");
+        _transferEther(msg.sender, value);
     }
 
     /// @dev Burn `value` WETH10 token from caller account and withdraw matching ether to account (`to`).
     /// Emits {Transfer} event to reflect WETH10 token burn of `value` WETH10 token to zero address from caller account.
     /// Requirements:
     ///   - caller account must have at least `value` balance of WETH10 token.
-    function withdrawTo(address to, uint256 value) external override {
+    function withdrawTo(address payable to, uint256 value) external override {
         _burnFrom(msg.sender, value);
-        (bool success, ) = to.call{value: value}("");
-        require(success, "WETH: Ether transfer failed");
+        _transferEther(to, value);
     }
 
     /// @dev Burn `value` WETH10 token from account (`from`) and withdraw matching ether to account (`to`).
@@ -136,10 +134,9 @@ contract WETH10 is IWETH10 {
     /// Requirements:
     ///   - `from` account must have at least `value` balance of WETH10 token.
     ///   - `from` account must have approved caller to spend at least `value` of WETH10 token, unless `from` and caller are the same account.
-    function withdrawFrom(address from, address to, uint256 value) external override {
+    function withdrawFrom(address from, address payable to, uint256 value) external override {
         _burnFrom(from, value);
-        (bool success, ) = to.call{value: value}("");
-        require(success, "WETH: Ether transfer failed");
+        _transferEther(to, value);
     }
 
     /// @dev Sets `value` as allowance of `spender` account over caller account's WETH10 token.
@@ -256,26 +253,26 @@ contract WETH10 is IWETH10 {
     /// - owner account (`from`) must have at least `value` WETH10 token.
     /// - caller account must have at least `value` allowance from account (`from`).
     function _transferFrom(address from, address to, uint256 value) internal returns (bool) {
-        uint256 balance = balanceOf[from];
-        require(balance >= value, "WETH: transfer amount exceeds balance");
+        if(to != address(0)) { // Transfer
+            uint256 balance = balanceOf[from];
+            require(balance >= value, "WETH: transfer amount exceeds balance");
 
-        if (from != msg.sender) {
-            uint256 allowed = allowance[from][msg.sender];
-            if (allowed != type(uint256).max) {
-                require(allowed >= value, "WETH: transfer amount exceeds allowance");
-                _approve(from, msg.sender, allowed - value);
+            if (from != msg.sender) {
+                uint256 allowed = allowance[from][msg.sender];
+                if (allowed != type(uint256).max) {
+                    require(allowed >= value, "WETH: transfer amount exceeds allowance");
+                    _approve(from, msg.sender, allowed - value);
+                }
             }
-        }
 
-        balanceOf[from] = balance - value;
-        
-        if(to == address(0)) { // Withdraw
-            (bool success, ) = msg.sender.call{value: value}("");
-            require(success, "WETH: Ether transfer failed");
-        } else { // Transfer
+            balanceOf[from] = balance - value;
             balanceOf[to] += value;
+            emit Transfer(from, to, value);
+        } else { // Withdraw
+            _burnFrom(from, value);
+            _transferEther(payable(to), value);
         }
-        emit Transfer(from, to, value);
+        
         return true;
     }
 
@@ -310,6 +307,12 @@ contract WETH10 is IWETH10 {
         require(address(this).balance + flashMinted <= type(uint112).max, "WETH: supply limit exceeded");
         balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
+    }
+
+    /// @dev Transfers `value` Ether to account (`to`).
+    function _transferEther(address payable to, uint256 value) internal {
+        (bool success, ) = to.call{value: value}("");
+        require(success, "WETH: Ether transfer failed");
     }
 }
 

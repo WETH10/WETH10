@@ -33,7 +33,7 @@ interface IWETH10 is IERC20, IERC2612, IERC3156FlashLender {
     /// Emits {Transfer} event to reflect WETH10 token burn of `value` WETH10 token to zero address from caller account.
     /// Requirements:
     ///   - caller account must have at least `value` balance of WETH10 token.
-    function withdrawTo(address to, uint256 value) external;
+    function withdrawTo(address payable to, uint256 value) external;
 
     /// @dev Burn `value` WETH10 token from account (`from`) and withdraw matching ether to account (`to`).
     /// Emits {Approval} event to reflect reduced allowance `value` for caller account to spend from account (`from`),
@@ -42,7 +42,7 @@ interface IWETH10 is IERC20, IERC2612, IERC3156FlashLender {
     /// Requirements:
     ///   - `from` account must have at least `value` balance of WETH10 token.
     ///   - `from` account must have approved caller to spend at least `value` of WETH10 token, unless `from` and caller are the same account.
-    function withdrawFrom(address from, address to, uint256 value) external;
+    function withdrawFrom(address from, address payable to, uint256 value) external;
 
     /// @dev `msg.value` of ether sent to contract grants `to` account a matching increase in WETH10 token balance,
     /// after which a call is executed to an ERC677-compliant contract.
