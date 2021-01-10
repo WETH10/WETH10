@@ -90,9 +90,9 @@ contract('WETH10', (accounts) => {
       })
 
       it('should not withdraw beyond balance', async () => {
-        await expectRevert(weth10.withdraw(100, { from: user1 }), 'WETH: withdraw amount exceeds balance')
-        await expectRevert(weth10.withdrawTo(user2, 100, { from: user1 }), 'WETH: withdraw amount exceeds balance')
-        await expectRevert(weth10.withdrawFrom(user1, user2, 100, { from: user1 }), 'WETH: withdraw amount exceeds balance')
+        await expectRevert(weth10.withdraw(100, { from: user1 }), 'WETH: burn amount exceeds balance')
+        await expectRevert(weth10.withdrawTo(user2, 100, { from: user1 }), 'WETH: burn amount exceeds balance')
+        await expectRevert(weth10.withdrawFrom(user1, user2, 100, { from: user1 }), 'WETH: burn amount exceeds balance')
       })
 
       it('transfers ether', async () => {
@@ -216,7 +216,7 @@ contract('WETH10', (accounts) => {
         })
 
         it('should not withdraw beyond allowance', async () => {
-          await expectRevert(weth10.withdrawFrom(user1, user3, 2, { from: user2 }), 'WETH: withdraw amount exceeds allowance')
+          await expectRevert(weth10.withdrawFrom(user1, user3, 2, { from: user2 }), 'WETH: burn amount exceeds allowance')
         })
       })
 

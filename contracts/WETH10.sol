@@ -80,7 +80,6 @@ contract WETH10 is IWETH10 {
         require(address(this).balance + flashMinted <= type(uint112).max, "WETH: supply limit exceeded");
         balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
-
         ITransferReceiver(to).onTokenTransfer(msg.sender, msg.value, data);
         return true; // TODO: Return the output of previous line
     }
@@ -123,13 +122,9 @@ contract WETH10 is IWETH10 {
     /// Requirements:
     ///   - caller account must have at least `value` balance of WETH10 token.
     function withdraw(uint256 value) external override {
-        uint256 balance = balanceOf[msg.sender];
-        require(balance >= value, "WETH: withdraw amount exceeds balance");
-        balanceOf[msg.sender] = balance - value;
-
+        _burnFrom(msg.sender, value);
         (bool success, ) = msg.sender.call{value: value}("");
         require(success, "WETH: Ether transfer failed");
-
         emit Transfer(msg.sender, address(0), value);
     }
 
@@ -138,13 +133,9 @@ contract WETH10 is IWETH10 {
     /// Requirements:
     ///   - caller account must have at least `value` balance of WETH10 token.
     function withdrawTo(address to, uint256 value) external override {
-        uint256 balance = balanceOf[msg.sender];
-        require(balance >= value, "WETH: withdraw amount exceeds balance");
-        balanceOf[msg.sender] = balance - value;
-
+        _burnFrom(msg.sender, value);
         (bool success, ) = to.call{value: value}("");
         require(success, "WETH: Ether transfer failed");
-
         emit Transfer(msg.sender, address(0), value);
     }
 
@@ -156,21 +147,9 @@ contract WETH10 is IWETH10 {
     ///   - `from` account must have at least `value` balance of WETH10 token.
     ///   - `from` account must have approved caller to spend at least `value` of WETH10 token, unless `from` and caller are the same account.
     function withdrawFrom(address from, address to, uint256 value) external override {
-        uint256 balance = balanceOf[from];
-        require(balance >= value, "WETH: withdraw amount exceeds balance");
-        
-        if (from != msg.sender) {
-            uint256 allowed = allowance[from][msg.sender];
-            if (allowed != type(uint256).max) {
-                require(allowed >= value, "WETH: withdraw amount exceeds allowance");
-                _approve(from, msg.sender, allowed - value);
-            }
-        }
-        balanceOf[from] = balance - value;
-
+        _burnFrom(from, value);
         (bool success, ) = to.call{value: value}("");
         require(success, "WETH: Ether transfer failed");
-
         emit Transfer(from, address(0), value);
     }
 
@@ -233,7 +212,6 @@ contract WETH10 is IWETH10 {
 
         address signer = ecrecover(hash, v, r, s);
         require(signer != address(0) && signer == owner, "WETH: invalid permit");
-
         _approve(owner, spender, value);
     }
 
@@ -268,7 +246,6 @@ contract WETH10 is IWETH10 {
     /// For more information on transferAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function transferAndCall(address to, uint value, bytes calldata data) external override returns (bool) {
         _transferFrom(msg.sender, to, value);
-
         ITransferReceiver(to).onTokenTransfer(msg.sender, value, data);
         return true; // TODO: Return the output of previous line
     }
@@ -309,10 +286,30 @@ contract WETH10 is IWETH10 {
         } else { // Transfer
             balanceOf[to] += value;
         }
-
         emit Transfer(from, to, value);
-
         return true;
+    }
+
+    /// @dev Destroys `value` WETH10 token from account (`from`) to account (`to`) using allowance mechanism.
+    /// `value` is then deducted from caller account's allowance, unless set to `type(uint256).max`.
+    ///
+    /// Emits {Transfer} and {Approval} events.
+    /// Requirements:
+    /// - owner account (`from`) must have at least `value` WETH10 token.
+    /// - caller account must have at least `value` allowance from account (`from`).
+    function _burnFrom(address from, uint256 value) internal {
+        uint256 balance = balanceOf[from];
+        require(balance >= value, "WETH: burn amount exceeds balance");
+        
+        if (from != msg.sender) {
+            uint256 allowed = allowance[from][msg.sender];
+            if (allowed != type(uint256).max) {
+                require(allowed >= value, "WETH: burn amount exceeds allowance");
+                _approve(from, msg.sender, allowed - value);
+            }
+        }
+        balanceOf[from] = balance - value;
+        emit Transfer(from, address(0), value);
     }
 }
 
