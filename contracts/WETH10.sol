@@ -82,7 +82,7 @@ contract WETH10 is IWETH10 {
         emit Transfer(address(0), to, msg.value);
 
         ITransferReceiver(to).onTokenTransfer(msg.sender, msg.value, data);
-        return true;
+        return true; // TODO: Return the output of previous line
     }
 
     /// @dev Return the amount of WETH10 that can be flash lended.
@@ -163,8 +163,7 @@ contract WETH10 is IWETH10 {
             uint256 allowed = allowance[from][msg.sender];
             if (allowed != type(uint256).max) {
                 require(allowed >= value, "WETH::withdrawFrom: withdraw amount exceeds allowance");
-                allowance[from][msg.sender] = allowed - value;
-                emit Approval(from, msg.sender, allowed - value);
+                _approve(from, msg.sender, allowed - value);
             }
         }
         balanceOf[from] = balance - value;
@@ -179,8 +178,7 @@ contract WETH10 is IWETH10 {
     /// Returns boolean value indicating whether operation succeeded.
     /// Emits {Approval} event.
     function approve(address spender, uint256 value) external override returns (bool) {
-        allowance[msg.sender][spender] = value;
-        emit Approval(msg.sender, spender, value);
+        _approve(msg.sender, spender, value);
         return true;
     }
 
@@ -190,11 +188,10 @@ contract WETH10 is IWETH10 {
     /// Emits {Approval} event.
     /// For more information on approveAndCall format, see https://github.com/ethereum/EIPs/issues/677.
     function approveAndCall(address spender, uint256 value, bytes calldata data) external override returns (bool) {
-        allowance[msg.sender][spender] = value;
-        emit Approval(msg.sender, spender, value);
+        _approve(msg.sender, spender, value);
 
         IApprovalReceiver(spender).onTokenApproval(msg.sender, value, data);
-        return true;
+        return true; // TODO: Return the output of previous line
     }
 
     /// @dev Sets `value` as allowance of `spender` account over `owner` account's WETH10 token, given `owner` account's signed approval.
@@ -237,8 +234,7 @@ contract WETH10 is IWETH10 {
         address signer = ecrecover(hash, v, r, s);
         require(signer != address(0) && signer == owner, "WETH::permit: invalid permit");
 
-        allowance[owner][spender] = value;
-        emit Approval(owner, spender, value);
+        _approve(owner, spender, value);
     }
 
     /// @dev Moves `value` WETH10 token from caller's account to account (`to`).
@@ -282,8 +278,7 @@ contract WETH10 is IWETH10 {
             uint256 allowed = allowance[from][msg.sender];
             if (allowed != type(uint256).max) {
                 require(allowed >= value, "WETH::transferFrom: transfer amount exceeds allowance");
-                allowance[from][msg.sender] = allowed - value;
-                emit Approval(from, msg.sender, allowed - value);
+                _approve(from, msg.sender, allowed - value);
             }
         }
 
@@ -319,7 +314,14 @@ contract WETH10 is IWETH10 {
         emit Transfer(msg.sender, to, value);
 
         ITransferReceiver(to).onTokenTransfer(msg.sender, value, data);
-        return true;
+        return true; // TODO: Return the output of previous line
+    }
+
+    /// @dev Sets `value` as allowance of `spender` account over `holder` account's WETH10 token.
+    /// Emits {Approval} event.
+    function _approve(address owner, address spender, uint256 value) internal {
+        allowance[owner][spender] = value;
+        emit Approval(owner, spender, value);
     }
 }
 
