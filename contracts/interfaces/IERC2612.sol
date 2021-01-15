@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Code adapted from https://github.com/OpenZeppelin/openzeppelin-contracts/pull/2237/
-pragma solidity ^0.7.6;
+pragma solidity ^0.8.0;
 
 /**
  * @dev Interface of the ERC2612 standard as defined in the EIP.

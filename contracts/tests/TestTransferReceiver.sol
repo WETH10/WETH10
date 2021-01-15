@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2015, 2016, 2017 Dapphub / adapted by [] 2020
-pragma solidity 0.7.6;
+pragma solidity ^0.8.0;
 
 
 contract TestTransferReceiver {

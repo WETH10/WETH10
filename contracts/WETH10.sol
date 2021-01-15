@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2015, 2016, 2017 Dapphub
 // Adapted by Ethereum Community 2020
-pragma solidity 0.7.6;
+pragma solidity ^0.8.0;
 
 import "./interfaces/IWETH10.sol";
 import "./interfaces/IERC3156FlashBorrower.sol";
@@ -109,7 +109,7 @@ contract WETH10 is IWETH10 {
     ///   - caller account must have at least `value` balance of WETH10 token.
     function withdraw(uint256 value) external override {
         _burnFrom(msg.sender, value);
-        _transferEther(msg.sender, value);
+        _transferEther(payable(msg.sender), value);
     }
 
     /// @dev Burn `value` WETH10 token from caller account and withdraw matching ether to account (`to`).
@@ -244,7 +244,7 @@ contract WETH10 is IWETH10 {
     function _decreaseAllowance(address owner, address spender, uint256 value) internal {
         uint256 allowed = allowance[owner][spender];
         if (allowed != type(uint256).max) {
-            require(allowed >= value, "WETH: request exceeds allowance");
+            // require(allowed >= value, "WETH: request exceeds allowance");
             _approve(owner, spender, allowed - value);
         }
     }
@@ -260,10 +260,10 @@ contract WETH10 is IWETH10 {
     /// - caller account must have at least `value` allowance from account (`from`).
     function _transferFrom(address from, address to, uint256 value) internal returns (bool) {
         if(to != address(0)) { // Transfer
-            uint256 balance = balanceOf[from];
-            require(balance >= value, "WETH: transfer amount exceeds balance");
+            // uint256 balance = balanceOf[from];
+            // require(balance >= value, "WETH: transfer amount exceeds balance");
 
-            balanceOf[from] = balance - value;
+            balanceOf[from] -= value;
             balanceOf[to] += value;
             emit Transfer(from, to, value);
         } else { // Withdraw
@@ -299,9 +299,9 @@ contract WETH10 is IWETH10 {
     /// - owner account (`from`) must have at least `value` WETH10 token.
     /// - caller account must have at least `value` allowance from account (`from`).
     function _burnFrom(address from, uint256 value) internal {
-        uint256 balance = balanceOf[from];
-        require(balance >= value, "WETH: burn amount exceeds balance");
-        balanceOf[from] = balance - value;
+        // uint256 balance = balanceOf[from];
+        // require(balance >= value, "WETH: burn amount exceeds balance");
+        balanceOf[from] -= value;
         emit Transfer(from, address(0), value);
     }
 }

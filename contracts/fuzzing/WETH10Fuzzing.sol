@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.7.6;
+pragma solidity ^0.8.0;
 import "../WETH10.sol";
 
 
@@ -19,7 +19,7 @@ contract WETH10Fuzzing {
     /// @dev Instantiate the WETH10 contract, and a holder address that will return weth when asked to.
     constructor () {
         weth = new WETH10();
-        holder = address(new MockHolder(address(weth), address(this)));
+        holder = address(new MockHolder(payable(weth), address(this)));
     }
 
     /// @dev Receive ETH when withdrawing.
