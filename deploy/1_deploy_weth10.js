@@ -7,3 +7,4 @@ module.exports = async function ({deployments, getNamedAccounts}) {
     log: true
   });
 }
+module.exports.tags = ["WETH10"]

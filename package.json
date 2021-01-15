@@ -1,34 +1,31 @@
 {
-  "name": "WETH",
-  "version": "10",
-  "description": "Wrapped Ether with ERC2612",
-  "main": "truffle-config.js",
+  "name": "WETH10",
+  "version": "10.0.0",
+  "description": "Wrapped Ether with ERC2612 and Flash Minting",
+  "main": "README.md",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "build": "buidler compile",
-    "test": "buidler test test/*.js",
-    "coverage": "buidler coverage --network coverage --temp build --testfiles 'test/*.js'",
+    "build": "hardhat compile",
+    "test": "hardhat test test/*.js",
+    "coverage": "hardhat coverage --network coverage --temp build --testfiles 'test/*.js'",
     "lint:js": "prettier ./test/**/*.js --write",
     "lint:sol": "solhint -f table contracts/**/*.sol",
-    "rinkeby:deploy": "buidler --network rinkeby deploy",
-    "kovan:deploy": "buidler --network kovan deploy",
-    "goerli:deploy": "buidler --network goerli deploy",
-    "ropsten:deploy": "buidler --network ropsten deploy",
-    "mainnet:deploy": "buidler --network mainnet deploy"
+    "rinkeby:deploy": "hardhat --network rinkeby deploy",
+    "kovan:deploy": "hardhat --network kovan deploy",
+    "goerli:deploy": "hardhat --network goerli deploy",
+    "ropsten:deploy": "hardhat --network ropsten deploy",
+    "mainnet:deploy": "hardhat --network mainnet deploy"
   },
   "author": "",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
-    "@nomiclabs/buidler": "^1.3.8",
-    "@nomiclabs/buidler-truffle5": "^1.3.4",
-    "@nomiclabs/buidler-web3": "^1.3.4",
+    "@nomiclabs/hardhat-truffle5": "^2.0.0",
+    "@nomiclabs/hardhat-web3": "^2.0.0",
     "@openzeppelin/test-helpers": "^0.5.6",
     "@truffle/hdwallet-provider": "^1.0.40",
     "@types/mocha": "^8.0.0",
-    "buidler-deploy": "^0.6.0-beta.37",
-    "buidler-gas-reporter": "0.1.4",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "delegable.sol": "^0.0.3",
@@ -36,11 +33,14 @@
     "ethereumjs-util": "^7.0.3",
     "ethers": "^5.0.7",
     "ganache-time-traveler": "^1.0.14",
+    "hardhat": "^2.0.6",
+    "hardhat-deploy": "^0.7.0-beta.39",
+    "hardhat-gas-reporter": "^1.0.4",
     "mocha": "^7.1.0",
     "prettier": "^2.0.5",
     "solhint": "^3.2.0",
     "solidity-coverage": "^0.7.9",
-    "truffle": "^5.1.39",
-    "truffle-flattener": "^1.5.0"
+    "truffle-flattener": "^1.5.0",
+    "truffle": "^5.1.39"
   }
 }
