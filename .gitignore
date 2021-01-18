@@ -111,6 +111,7 @@ typings/
 # the .secret
 .secret
 .infuraKey
+.etherscanKey
 
 # coverage
 .coverage_artifacts/

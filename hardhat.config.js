@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+require('@nomiclabs/hardhat-etherscan')
 require('@nomiclabs/hardhat-truffle5')
 require('solidity-coverage')
 require('hardhat-gas-reporter')
@@ -36,6 +37,13 @@ if (!mnemonic) {
 const accounts = mnemonic ? {
   mnemonic,
 }: undefined;
+
+let etherscanKey = process.env.ETHERSCANKEY;
+if (!etherscanKey) {
+  try {
+    etherscanKey = fs.readFileSync(path.resolve(__dirname, '.etherscanKey')).toString().trim()
+  } catch(e){}
+}
 
 module.exports = {
   defaultNetwork: 'hardhat',

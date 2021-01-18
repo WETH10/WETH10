@@ -21,6 +21,7 @@
   "author": "",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
+    "@nomiclabs/hardhat-etherscan": "^2.1.0",
     "@nomiclabs/hardhat-truffle5": "^2.0.0",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@openzeppelin/test-helpers": "^0.5.6",
@@ -28,7 +29,6 @@
     "@types/mocha": "^8.0.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "delegable.sol": "^0.0.3",
     "eth-permit": "^0.1.8",
     "ethereumjs-util": "^7.0.3",
     "ethers": "^5.0.7",
