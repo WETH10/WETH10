@@ -78,7 +78,7 @@ contract WETH10 is IWETH10 {
 
     /// @dev Return the amount of WETH10 that can be flash lended.
     function maxFlashAmount(address token) external view override returns (uint256) {
-        return token == address(this) ? type(uint112).max - address(this).balance - flashMinted : 0; // Can't underflow
+        return token == address(this) ? type(uint112).max - flashMinted : 0; // Can't underflow
     }
 
     /// @dev Return the fee (zero) for flash lending an amount of WETH10.
@@ -91,12 +91,15 @@ contract WETH10 is IWETH10 {
     /// By the end of the transaction, `value` WETH10 tokens will be burned from the receiver.
     /// The flash minted WETH10 is not backed by real Ether, but can be withdrawn as such up to the Ether balance of this contract.
     /// Arbitrary data can be passed as a bytes calldata parameter.
+    /// Requirements:
+    ///   - `value` must be less or equal to type(uint112).max.
+    ///   - The total of all flash loans in a tx must be less or equal to type(uint112).max.
     /// Emits two {Transfer} events for minting and burning of the flash minted amount.
     function flashLoan(IERC3156FlashBorrower receiver, address token, uint256 value, bytes calldata data) external override returns(bool) {
         require(token == address(this), "WETH: flash mint only WETH10");
-        uint256 _flashMinted = flashMinted;
-        require(value <= type(uint112).max && address(this).balance + _flashMinted + value <= type(uint112).max, "WETH: supply limit exceeded");
-        flashMinted = _flashMinted + value;
+        require(value <= type(uint112).max, "WETH: individual loan limit exceeded");
+        flashMinted = flashMinted + value;
+        require(flashMinted <= type(uint112).max, "WETH: total loan limit exceeded");
         _mintTo(address(receiver), value);
 
         require(
@@ -288,12 +291,9 @@ contract WETH10 is IWETH10 {
     }
 
     /// @dev Creates `value` WETH10 token on account (`to`).
-    /// Requirements:
-    /// - The resulting WETH10 supply must remain below type(uint112).max.
     ///
     /// Emits {Transfer} event.
     function _mintTo(address to, uint256 value) internal {
-        require(address(this).balance + flashMinted <= type(uint112).max, "WETH: supply limit exceeded");
         balanceOf[to] += value;
         emit Transfer(address(0), to, value);
     }
