@@ -4,7 +4,7 @@
 pragma solidity 0.7.6;
 
 import "./interfaces/IWETH10.sol";
-import "./interfaces/IERC3156FlashBorrower.sol";
+import "erc3156/contracts/interfaces/IERC3156FlashBorrower.sol";
 
 interface ITransferReceiver {
     function onTokenTransfer(address, uint, bytes calldata) external returns (bool);
@@ -24,6 +24,7 @@ contract WETH10 is IWETH10 {
     string public constant symbol = "WETH10";
     uint8  public constant decimals = 18;
 
+    bytes32 public immutable CALLBACK_SUCCESS = keccak256("ERC3156FlashBorrower.onFlashLoan");
     bytes32 public immutable PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
     /// @dev Records amount of WETH10 token owned by account.
@@ -77,7 +78,7 @@ contract WETH10 is IWETH10 {
 
     /// @dev Return the amount of WETH10 that can be flash lended.
     function maxFlashAmount(address token) external view override returns (uint256) {
-        return token == address(this) ? type(uint112).max - address(this).balance - flashMinted : 0; // Can't underflow - L108
+        return token == address(this) ? type(uint112).max - address(this).balance - flashMinted : 0; // Can't underflow
     }
 
     /// @dev Return the fee (zero) for flash lending an amount of WETH10.
@@ -91,16 +92,22 @@ contract WETH10 is IWETH10 {
     /// The flash minted WETH10 is not backed by real Ether, but can be withdrawn as such up to the Ether balance of this contract.
     /// Arbitrary data can be passed as a bytes calldata parameter.
     /// Emits two {Transfer} events for minting and burning of the flash minted amount.
-    function flashLoan(address receiver, address token, uint256 value, bytes calldata data) external override {
+    function flashLoan(IERC3156FlashBorrower receiver, address token, uint256 value, bytes calldata data) external override returns(bool) {
         require(token == address(this), "WETH: flash mint only WETH10");
-        flashMinted += value;
-        _mintTo(receiver, value);
+        uint256 _flashMinted = flashMinted;
+        require(value <= type(uint112).max && address(this).balance + _flashMinted + value <= type(uint112).max, "WETH: supply limit exceeded");
+        flashMinted = _flashMinted + value;
+        _mintTo(address(receiver), value);
 
-        IERC3156FlashBorrower(receiver).onFlashLoan(msg.sender, address(this), value, 0, data);
+        require(
+            receiver.onFlashLoan(msg.sender, address(this), value, 0, data) == CALLBACK_SUCCESS,
+            "WETH: flash loan failed"
+        );
 
-        _decreaseAllowance(receiver, address(this), value);
-        _burnFrom(receiver, value);
-        flashMinted -= value;
+        _decreaseAllowance(address(receiver), address(this), value);
+        _burnFrom(address(receiver), value);
+        flashMinted = flashMinted - value;
+        return true;
     }
 
     /// @dev Burn `value` WETH10 token from caller account and withdraw matching ether to the same.

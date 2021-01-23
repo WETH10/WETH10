@@ -4,7 +4,7 @@
 pragma solidity 0.7.6;
 import "./IERC20.sol";
 import "./IERC2612.sol";
-import "./IERC3156FlashLender.sol";
+import "erc3156/contracts/interfaces/IERC3156FlashLender.sol";
 
 
 /// @dev WETH10 is an Ether ERC20 wrapper. You can `deposit` Ether and obtain Wrapped Ether which can then be operated as an ERC20 token. You can
