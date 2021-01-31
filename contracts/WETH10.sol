@@ -336,9 +336,7 @@ contract WETH10 is IWETH10 {
             (bool success, ) = to.call{value: value}("");
             require(success, "WETH: Ether transfer failed");
         }
-        
-        return true;
-        
+
         return ITransferReceiver(to).onTokenTransfer(msg.sender, value, data);
     }
 }
