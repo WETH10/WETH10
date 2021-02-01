@@ -77,7 +77,7 @@ contract WETH10 is IWETH10 {
     }
 
     /// @dev Return the amount of WETH10 token that can be flash-lent.
-    function maxFlashAmount(address token) external view override returns (uint256) {
+    function maxFlashLoan(address token) external view override returns (uint256) {
         return token == address(this) ? type(uint112).max - flashMinted : 0; // Can't underflow
     }
 
