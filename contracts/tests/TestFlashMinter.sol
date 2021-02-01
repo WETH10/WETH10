@@ -30,9 +30,9 @@ contract TestFlashLender is IERC3156FlashBorrower {
         } else if (action == Action.STEAL) {
             // Do nothing
         } else if (action == Action.REENTER) {
-            bytes memory data = abi.encode(Action.NORMAL);
+            bytes memory newData = abi.encode(Action.NORMAL);
             IWETH10(lender).approve(lender, IWETH10(lender).allowance(address(this), lender) + value * 2);
-            IWETH10(lender).flashLoan(this, address(lender), value * 2, data);
+            IWETH10(lender).flashLoan(this, address(lender), value * 2, newData);
         }
         return keccak256("ERC3156FlashBorrower.onFlashLoan");
     }
