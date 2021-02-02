@@ -29,7 +29,7 @@
     "@types/mocha": "^8.0.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "erc3156": "^0.4.4",
+    "erc3156": "^0.4.7",
     "eth-permit": "^0.1.8",
     "ethereumjs-util": "^7.0.3",
     "ethers": "^5.0.7",

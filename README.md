@@ -32,3 +32,6 @@ This function will call `onTokenTransfer` on the recipient address, receiving an
 This contract implements [EIP3156](https://eips.ethereum.org/EIPS/eip-3156) that allows to `flashLoan` an arbitrary amount of Wrapped Ether, unbacked by real Ether, with the condition that it is burned before the end of the transaction. No fees are charged.
 
 This function will call `onFlashLoan` on the calling address, receiving and passing along a `bytes` parameter which can be used by the calling contract to process the callback.
+
+## Function unrolling
+For a minimal gas cost, all functions in WETH10 are `external`, and a great deal of code repetition exists. To help in understanding the code, blocks that are used recurrently are preceded by a commented-out function call such as `// _transferFrom(msg.sender, to, value)` that describes the functionality of the block, and followed by a blank line.
