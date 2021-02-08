@@ -87,7 +87,7 @@ contract WETH10 is IWETH10 {
     }
 
     /// @dev Return the fee (zero) for flash-lending an amount of WETH10 token.
-    function flashFee(address token, uint256) external view override returns (uint256) {
+    function flashFee(address token, uint256 value) external view override returns (uint256) {
         require(token == address(this), "WETH: flash mint only WETH10");
         return 0;
     }
