@@ -50,7 +50,8 @@ module.exports = {
   networks: {
     kovan: {
       accounts,
-      url: nodeUrl('kovan')
+      url: nodeUrl('kovan'),
+      gasPrice: 100000000000
     },
     goerli: {
       accounts,
@@ -66,7 +67,8 @@ module.exports = {
     },
     mainnet: {
       accounts,
-      url: nodeUrl('mainnet')
+      url: nodeUrl('mainnet'),
+      gasPrice: 100000000000
     },
     coverage: {
       url: 'http://127.0.0.1:8555',
@@ -83,6 +85,9 @@ module.exports = {
   },
   gasReporter: {
     enabled: true,
+  },
+  etherscan: {
+    apiKey: etherscanKey
   },
   paths: {
     sources: './contracts',

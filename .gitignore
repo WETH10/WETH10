@@ -110,6 +110,7 @@ typings/
 
 # the .secret
 .secret
+.keys/
 .infuraKey
 .etherscanKey
 
