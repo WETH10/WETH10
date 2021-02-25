@@ -2,7 +2,7 @@
 
 This [twitter hackathon project 🐦](https://twitter.com/r_ross_campbell/status/1314726259050639364?s=20) updates the canonical ["Wrapped Ether" WETH(9) contract](https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2#code) with minor but significant upgrades to save Ethereum network users gas and time in making transactions with tokenized ETH on lo-trust, lo-code 🍬⛽.
 
-[Kovan testnet deployment](https://kovan.etherscan.io/address/0xD25f374A2d7d40566b006eC21D82b9655865F941) of latest meaningful commit ([fd225b0](https://github.com/WETH10/WETH10/commit/fd225b03531c1af261a0ec9be16c6b8c8cb4110a)) 🔨.
+[Kovan testnet deployment](https://kovan.etherscan.io/address/0xA243FEB70BaCF6cD77431269e68135cf470051b4) of latest meaningful commit ([8d30910](https://github.com/WETH10/WETH10/commit/8d309101c6d8483cc289d656054cadda2de156fe)) 🔨.
 
 ## Total Supply
 The supply of WETH10 is capped at `type(uint112).max`.
