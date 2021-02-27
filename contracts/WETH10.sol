@@ -54,18 +54,22 @@ contract WETH10 is IWETH10 {
 
     /// @dev `msg.value` of ETH sent to this contract grants caller account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to caller account.
-    function deposit() external override payable {
+    function deposit() external override payable returns (bool) {
         // _mintTo(msg.sender, msg.value);
         balanceOf[msg.sender] += msg.value;
         emit Transfer(address(0), msg.sender, msg.value);
+
+        return true;
     }
 
     /// @dev `msg.value` of ETH sent to this contract grants `to` account a matching increase in WETH10 token balance.
     /// Emits {Transfer} event to reflect WETH10 token mint of `msg.value` from zero address to `to` account.
-    function depositTo(address to) external override payable {
+    function depositTo(address to) external override payable returns (bool) {
         // _mintTo(to, msg.value);
         balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
+
+        return true;
     }
 
     /// @dev `msg.value` of ETH sent to this contract grants `to` account a matching increase in WETH10 token balance,
@@ -141,7 +145,7 @@ contract WETH10 is IWETH10 {
     /// Emits {Transfer} event to reflect WETH10 token burn of `value` to zero address from caller account. 
     /// Requirements:
     ///   - caller account must have at least `value` balance of WETH10 token.
-    function withdraw(uint256 value) external override {
+    function withdraw(uint256 value) external override returns (bool) {
         // _burnFrom(msg.sender, value);
         uint256 balance = balanceOf[msg.sender];
         require(balance >= value, "WETH: burn amount exceeds balance");
@@ -151,13 +155,15 @@ contract WETH10 is IWETH10 {
         // _transferEther(msg.sender, value);        
         (bool success, ) = msg.sender.call{value: value}("");
         require(success, "WETH: ETH transfer failed");
+
+        return true;
     }
 
     /// @dev Burn `value` WETH10 token from caller account and withdraw matching ETH to account (`to`).
     /// Emits {Transfer} event to reflect WETH10 token burn of `value` to zero address from caller account.
     /// Requirements:
     ///   - caller account must have at least `value` balance of WETH10 token.
-    function withdrawTo(address payable to, uint256 value) external override {
+    function withdrawTo(address payable to, uint256 value) external override returns (bool) {
         // _burnFrom(msg.sender, value);
         uint256 balance = balanceOf[msg.sender];
         require(balance >= value, "WETH: burn amount exceeds balance");
@@ -167,6 +173,8 @@ contract WETH10 is IWETH10 {
         // _transferEther(to, value);        
         (bool success, ) = to.call{value: value}("");
         require(success, "WETH: ETH transfer failed");
+
+        return true;
     }
 
     /// @dev Burn `value` WETH10 token from account (`from`) and withdraw matching ETH to account (`to`).
@@ -176,7 +184,7 @@ contract WETH10 is IWETH10 {
     /// Requirements:
     ///   - `from` account must have at least `value` balance of WETH10 token.
     ///   - `from` account must have approved caller to spend at least `value` of WETH10 token, unless `from` and caller are the same account.
-    function withdrawFrom(address from, address payable to, uint256 value) external override {
+    function withdrawFrom(address from, address payable to, uint256 value) external override returns (bool) {
         if (from != msg.sender) {
             // _decreaseAllowance(from, msg.sender, value);
             uint256 allowed = allowance[from][msg.sender];
@@ -197,6 +205,8 @@ contract WETH10 is IWETH10 {
         // _transferEther(to, value);        
         (bool success, ) = to.call{value: value}("");
         require(success, "WETH: Ether transfer failed");
+
+        return true;
     }
 
     /// @dev Sets `value` as allowance of `spender` account over caller account's WETH10 token.
