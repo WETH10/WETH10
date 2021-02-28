@@ -25,7 +25,8 @@ contract WETH10 is IWETH10 {
 
     bytes32 public immutable CALLBACK_SUCCESS = keccak256("ERC3156FlashBorrower.onFlashLoan");
     bytes32 public immutable PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-    bytes32 public override immutable DOMAIN_SEPARATOR;
+    uint256 public immutable deploymentChainId;
+    bytes32 internal immutable _DOMAIN_SEPARATOR;
 
     /// @dev Records amount of WETH10 token owned by account.
     mapping (address => uint256) public override balanceOf;
@@ -43,7 +44,13 @@ contract WETH10 is IWETH10 {
     constructor() {
         uint256 chainId;
         assembly {chainId := chainid()}
-        DOMAIN_SEPARATOR = keccak256(
+        deploymentChainId = chainId;
+        _DOMAIN_SEPARATOR = _calculateDomainSeparator(chainId);
+    }
+
+    /// @dev Calculate the DOMAIN_SEPARATOR
+    function _calculateDomainSeparator(uint256 chainId) internal view returns (bytes32) {
+        return keccak256(
             abi.encode(
                 keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
                 keccak256(bytes(name)),
@@ -52,6 +59,13 @@ contract WETH10 is IWETH10 {
                 address(this)
             )
         );
+    }
+
+    /// @dev Return the DOMAIN_SEPARATOR
+    function DOMAIN_SEPARATOR() public view override returns (bytes32) {
+        uint256 chainId;
+        assembly {chainId := chainid()}
+        return chainId == deploymentChainId ? _DOMAIN_SEPARATOR : _calculateDomainSeparator(chainId);
     }
     
     /// @dev Returns the total supply of WETH10 token as the ETH held in this contract.
@@ -250,6 +264,9 @@ contract WETH10 is IWETH10 {
     function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external override {
         require(block.timestamp <= deadline, "WETH: Expired permit");
 
+        uint256 chainId;
+        assembly {chainId := chainid()}
+
         bytes32 hashStruct = keccak256(
             abi.encode(
                 PERMIT_TYPEHASH,
@@ -262,7 +279,7 @@ contract WETH10 is IWETH10 {
         bytes32 hash = keccak256(
             abi.encodePacked(
                 "\x19\x01",
-                DOMAIN_SEPARATOR,
+                chainId == deploymentChainId ? _DOMAIN_SEPARATOR : _calculateDomainSeparator(chainId),
                 hashStruct));
 
         address signer = ecrecover(hash, v, r, s);
