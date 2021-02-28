@@ -68,7 +68,8 @@ module.exports = {
     mainnet: {
       accounts,
       url: nodeUrl('mainnet'),
-      gasPrice: 100000000000
+      gasPrice: 80000000000,
+      gasLimit: 2500000000,
     },
     coverage: {
       url: 'http://127.0.0.1:8555',
