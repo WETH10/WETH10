@@ -23,8 +23,8 @@ interface IERC2612 {
      *
      * Requirements:
      *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
+     * - `owner` cannot be `address(0)`.
+     * - `spender` cannot be `address(0)`.
      * - `deadline` must be a timestamp in the future.
      * - `v`, `r` and `s` must be a valid `secp256k1` signature from `owner`
      * over the EIP712-formatted function arguments.
