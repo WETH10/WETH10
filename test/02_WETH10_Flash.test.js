@@ -1,4 +1,3 @@
-const WETH9 = artifacts.require('WETH9')
 const WETH10 = artifacts.require('WETH10')
 const TestFlashLender = artifacts.require('TestFlashLender')
 
@@ -9,13 +8,11 @@ const MAX = "5192296858534827628530496329220095"
 
 contract('WETH10 - Flash Minting', (accounts) => {
   const [deployer, user1, user2] = accounts
-  let weth9
   let weth10
   let flash
 
   beforeEach(async () => {
-    weth9 = await WETH9.new({ from: deployer })
-    weth10 = await WETH10.new(weth9.address, { from: deployer })
+    weth10 = await WETH10.new({ from: deployer })
     flash = await TestFlashLender.new({ from: deployer })
   })
 

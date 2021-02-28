@@ -1,4 +1,3 @@
-const WETH9 = artifacts.require('WETH9')
 const WETH10 = artifacts.require('WETH10')
 const { signERC2612Permit } = require('eth-permit')
 const TestTransferReceiver = artifacts.require('TestTransferReceiver')
@@ -11,12 +10,10 @@ const MAX = "1157920892373161954235709850086879078532699846656405640394575840079
 
 contract('WETH10', (accounts) => {
   const [deployer, user1, user2, user3] = accounts
-  let weth9
   let weth10
 
   beforeEach(async () => {
-    weth9 = await WETH9.new({ from: deployer })
-    weth10 = await WETH10.new(weth9.address, { from: deployer })
+    weth10 = await WETH10.new({ from: deployer })
   })
 
   describe('deployment', async () => {
