@@ -49,7 +49,9 @@ contract WETH10 is IWETH10 {
                 keccak256(bytes(name)),
                 keccak256(bytes("1")),
                 chainId,
-                address(this)));
+                address(this)
+            )
+        );
     }
     
     /// @dev Returns the total supply of WETH10 token as the ETH held in this contract.
