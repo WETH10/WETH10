@@ -48,7 +48,7 @@ contract WETH10 is IWETH10 {
         _DOMAIN_SEPARATOR = _calculateDomainSeparator(chainId);
     }
 
-    /// @dev Calculate the DOMAIN_SEPARATOR
+    /// @dev Calculate the DOMAIN_SEPARATOR.
     function _calculateDomainSeparator(uint256 chainId) private view returns (bytes32) {
         return keccak256(
             abi.encode(
@@ -61,7 +61,7 @@ contract WETH10 is IWETH10 {
         );
     }
 
-    /// @dev Return the DOMAIN_SEPARATOR
+    /// @dev Return the DOMAIN_SEPARATOR.
     function DOMAIN_SEPARATOR() external view override returns (bytes32) {
         uint256 chainId;
         assembly {chainId := chainid()}
