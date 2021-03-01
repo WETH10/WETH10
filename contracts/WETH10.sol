@@ -26,7 +26,7 @@ contract WETH10 is IWETH10 {
     bytes32 public immutable CALLBACK_SUCCESS = keccak256("ERC3156FlashBorrower.onFlashLoan");
     bytes32 public immutable PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     uint256 public immutable deploymentChainId;
-    bytes32 internal immutable _DOMAIN_SEPARATOR;
+    bytes32 private immutable _DOMAIN_SEPARATOR;
 
     /// @dev Records amount of WETH10 token owned by account.
     mapping (address => uint256) public override balanceOf;
@@ -49,7 +49,7 @@ contract WETH10 is IWETH10 {
     }
 
     /// @dev Calculate the DOMAIN_SEPARATOR
-    function _calculateDomainSeparator(uint256 chainId) internal view returns (bytes32) {
+    function _calculateDomainSeparator(uint256 chainId) private view returns (bytes32) {
         return keccak256(
             abi.encode(
                 keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
@@ -62,7 +62,7 @@ contract WETH10 is IWETH10 {
     }
 
     /// @dev Return the DOMAIN_SEPARATOR
-    function DOMAIN_SEPARATOR() public view override returns (bytes32) {
+    function DOMAIN_SEPARATOR() external view override returns (bytes32) {
         uint256 chainId;
         assembly {chainId := chainid()}
         return chainId == deploymentChainId ? _DOMAIN_SEPARATOR : _calculateDomainSeparator(chainId);
