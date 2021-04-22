@@ -2,7 +2,7 @@
 pragma solidity 0.7.6;
 
 import "../interfaces/IWETH10.sol";
-import "erc3156/contracts/interfaces/IERC3156FlashBorrower.sol";
+import "../interfaces/IERC3156FlashBorrower.sol";
 
 
 contract TestFlashLender is IERC3156FlashBorrower {
