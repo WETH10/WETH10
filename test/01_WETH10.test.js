@@ -133,6 +133,11 @@ contract('WETH10', (accounts) => {
         events[0].returnValues.data.should.equal('0x11')
       })
 
+      it('should not transfer and call to zero address', async () => {
+        const receiver = '0x0000000000000000000000000000000000000000'
+        await expectRevert.unspecified(weth10.transferAndCall(receiver, 100, '0x11', { from: user1 }))
+      })
+
       it('should not transfer beyond balance', async () => {
         await expectRevert(weth10.transfer(user2, 100, { from: user1 }), 'WETH: transfer amount exceeds balance')
         await expectRevert(weth10.transferFrom(user1, user2, 100, { from: user1 }), 'WETH: transfer amount exceeds balance')
