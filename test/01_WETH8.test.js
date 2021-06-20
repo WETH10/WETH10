@@ -1,6 +1,5 @@
 const WETH8 = artifacts.require('WETH8')
 const { signERC2612Permit } = require('eth-permit')
-const TestTransferReceiver = artifacts.require('TestTransferReceiver')
 
 const { BN, expectRevert } = require('@openzeppelin/test-helpers')
 const { web3 } = require('@openzeppelin/test-helpers/src/setup')
@@ -41,19 +40,6 @@ contract('WETH8', (accounts) => {
       await weth8.depositTo(user2, { from: user1, value: 1 })
       const balanceAfter = await weth8.balanceOf(user2)
       balanceAfter.toString().should.equal(balanceBefore.add(new BN('1')).toString())
-    })
-
-    it('deposits with depositToAndCall', async () => {
-      const receiver = await TestTransferReceiver.new()
-      await weth8.depositToAndCall(receiver.address, '0x11', { from: user1, value: 1 })
-
-      const events = await receiver.getPastEvents()
-      events.length.should.equal(1)
-      events[0].event.should.equal('TransferReceived')
-      events[0].returnValues.token.should.equal(weth8.address)
-      events[0].returnValues.sender.should.equal(user1)
-      events[0].returnValues.value.should.equal('1')
-      events[0].returnValues.data.should.equal('0x11')
     })
 
     describe('with a positive balance', async () => {
@@ -120,29 +106,9 @@ contract('WETH8', (accounts) => {
         balanceAfter.toString().should.equal(balanceBefore.sub(new BN('1')).toString())
       })
 
-      it('transfers with transferAndCall', async () => {
-        const receiver = await TestTransferReceiver.new()
-        await weth8.transferAndCall(receiver.address, 1, '0x11', { from: user1 })
-
-        const events = await receiver.getPastEvents()
-        events.length.should.equal(1)
-        events[0].event.should.equal('TransferReceived')
-        events[0].returnValues.token.should.equal(weth8.address)
-        events[0].returnValues.sender.should.equal(user1)
-        events[0].returnValues.value.should.equal('1')
-        events[0].returnValues.data.should.equal('0x11')
-      })
-
-      it('should not transfer and call to zero address', async () => {
-        const receiver = '0x0000000000000000000000000000000000000000'
-        await expectRevert.unspecified(weth8.transferAndCall(receiver, 100, '0x11', { from: user1 }))
-      })
-
       it('should not transfer beyond balance', async () => {
         await expectRevert(weth8.transfer(user2, 100, { from: user1 }), 'WETH: transfer amount exceeds balance')
         await expectRevert(weth8.transferFrom(user1, user2, 100, { from: user1 }), 'WETH: transfer amount exceeds balance')
-        const receiver = await TestTransferReceiver.new()
-        await expectRevert(weth8.transferAndCall(receiver.address, 100, '0x11', { from: user1 }), 'WETH: transfer amount exceeds balance')
       })
 
       it('approves to increase allowance', async () => {
@@ -150,19 +116,6 @@ contract('WETH8', (accounts) => {
         await weth8.approve(user2, 1, { from: user1 })
         const allowanceAfter = await weth8.allowance(user1, user2)
         allowanceAfter.toString().should.equal(allowanceBefore.add(new BN('1')).toString())
-      })
-
-      it('approves with approveAndCall', async () => {
-        const receiver = await TestTransferReceiver.new()
-        await weth8.approveAndCall(receiver.address, 1, '0x11', { from: user1 })
-
-        const events = await receiver.getPastEvents()
-        events.length.should.equal(1)
-        events[0].event.should.equal('ApprovalReceived')
-        events[0].returnValues.token.should.equal(weth8.address)
-        events[0].returnValues.spender.should.equal(user1)
-        events[0].returnValues.value.should.equal('1')
-        events[0].returnValues.data.should.equal('0x11')
       })
 
       it('approves to increase allowance with permit', async () => {
