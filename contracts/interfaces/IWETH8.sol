@@ -43,28 +43,4 @@ interface IWETH8 is IERC20, IERC2612, IERC3156FlashLender {
     ///   - `from` account must have at least `value` balance of WETH8 token.
     ///   - `from` account must have approved caller to spend at least `value` of WETH8 token, unless `from` and caller are the same account.
     function withdrawFrom(address from, address payable to, uint256 value) external;
-
-    /// @dev `msg.value` of ETH sent to this contract grants `to` account a matching increase in WETH8 token balance,
-    /// after which a call is executed to an ERC677-compliant contract with the `data` parameter.
-    /// Emits {Transfer} event.
-    /// Returns boolean value indicating whether operation succeeded.
-    /// For more information on {transferAndCall} format, see https://github.com/ethereum/EIPs/issues/677.
-    function depositToAndCall(address to, bytes calldata data) external payable returns (bool);
-
-    /// @dev Sets `value` as allowance of `spender` account over caller account's WETH8 token,
-    /// after which a call is executed to an ERC677-compliant contract with the `data` parameter.
-    /// Emits {Approval} event.
-    /// Returns boolean value indicating whether operation succeeded.
-    /// For more information on {approveAndCall} format, see https://github.com/ethereum/EIPs/issues/677.
-    function approveAndCall(address spender, uint256 value, bytes calldata data) external returns (bool);
-
-    /// @dev Moves `value` WETH8 token from caller's account to account (`to`), 
-    /// after which a call is executed to an ERC677-compliant contract with the `data` parameter.
-    /// A transfer to `address(0)` triggers an ETH withdraw matching the sent WETH8 token in favor of caller.
-    /// Emits {Transfer} event.
-    /// Returns boolean value indicating whether operation succeeded.
-    /// Requirements:
-    ///   - caller account must have at least `value` WETH8 token.
-    /// For more information on {transferAndCall} format, see https://github.com/ethereum/EIPs/issues/677.
-    function transferAndCall(address to, uint value, bytes calldata data) external returns (bool);
 }

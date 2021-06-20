@@ -21,11 +21,6 @@ When an approval is set to `type(uint256).max` it will not decrease through `tra
 
 WETH8 implements [EIP2612](https://eips.ethereum.org/EIPS/eip-2612) to set approvals through off-chain signatures
 
-## Call Chaining
-The `depositAndCall` and `transferAndCall` functions allow to deposit Ether or transfer WETH, executing a call in a user-defined contract immediately afterwards, but within the same transaction.
-
-This function will call `onTokenTransfer` on the recipient address, receiving and passing along a `bytes` parameter which can be used by the calling contract to process the callback. See [EIP667](https://github.com/ethereum/EIPs/issues/677).
-
 ## Flash Loans
 This contract implements [EIP3156](https://eips.ethereum.org/EIPS/eip-3156) that allows to `flashLoan` an arbitrary amount of Wrapped Ether, unbacked by real Ether, with the condition that it is burned before the end of the transaction. No fees are charged.
 

@@ -6,14 +6,6 @@ pragma solidity 0.7.6;
 import "./interfaces/IWETH8.sol";
 import "./interfaces/IERC3156FlashBorrower.sol";
 
-interface ITransferReceiver {
-    function onTokenTransfer(address, uint, bytes calldata) external returns (bool);
-}
-
-interface IApprovalReceiver {
-    function onTokenApproval(address, uint, bytes calldata) external returns (bool);
-}
-
 /// @dev Wrapped Ether v10 (WETH8) is an Ether (ETH) ERC-20 wrapper. You can `deposit` ETH and obtain a WETH8 balance which can then be operated as an ERC-20 token. You can
 /// `withdraw` ETH from WETH8, which will then burn WETH8 token in your wallet. The amount of WETH8 token in any wallet is always identical to the
 /// balance of ETH deposited minus the ETH withdrawn with that specific wallet.
@@ -95,19 +87,6 @@ contract WETH8 is IWETH8 {
         // _mintTo(to, msg.value);
         balanceOf[to] += msg.value;
         emit Transfer(address(0), to, msg.value);
-    }
-
-    /// @dev `msg.value` of ETH sent to this contract grants `to` account a matching increase in WETH8 token balance,
-    /// after which a call is executed to an ERC677-compliant contract with the `data` parameter.
-    /// Emits {Transfer} event.
-    /// Returns boolean value indicating whether operation succeeded.
-    /// For more information on {transferAndCall} format, see https://github.com/ethereum/EIPs/issues/677.
-    function depositToAndCall(address to, bytes calldata data) external override payable returns (bool success) {
-        // _mintTo(to, msg.value);
-        balanceOf[to] += msg.value;
-        emit Transfer(address(0), to, msg.value);
-
-        return ITransferReceiver(to).onTokenTransfer(msg.sender, msg.value, data);
     }
 
     /// @dev Return the amount of WETH8 token that can be flash-lent.
@@ -239,19 +218,6 @@ contract WETH8 is IWETH8 {
         return true;
     }
 
-    /// @dev Sets `value` as allowance of `spender` account over caller account's WETH8 token,
-    /// after which a call is executed to an ERC677-compliant contract with the `data` parameter.
-    /// Emits {Approval} event.
-    /// Returns boolean value indicating whether operation succeeded.
-    /// For more information on {approveAndCall} format, see https://github.com/ethereum/EIPs/issues/677.
-    function approveAndCall(address spender, uint256 value, bytes calldata data) external override returns (bool) {
-        // _approve(msg.sender, spender, value);
-        allowance[msg.sender][spender] = value;
-        emit Approval(msg.sender, spender, value);
-        
-        return IApprovalReceiver(spender).onTokenApproval(msg.sender, value, data);
-    }
-
     /// @dev Sets `value` as allowance of `spender` account over `owner` account's WETH8 token, given `owner` account's signed approval.
     /// Emits {Approval} event.
     /// Requirements:
@@ -359,35 +325,5 @@ contract WETH8 is IWETH8 {
         }
         
         return true;
-    }
-
-    /// @dev Moves `value` WETH8 token from caller's account to account (`to`), 
-    /// after which a call is executed to an ERC677-compliant contract with the `data` parameter.
-    /// A transfer to `address(0)` triggers an ETH withdraw matching the sent WETH8 token in favor of caller.
-    /// Emits {Transfer} event.
-    /// Returns boolean value indicating whether operation succeeded.
-    /// Requirements:
-    ///   - caller account must have at least `value` WETH8 token.
-    /// For more information on {transferAndCall} format, see https://github.com/ethereum/EIPs/issues/677.
-    function transferAndCall(address to, uint value, bytes calldata data) external override returns (bool) {
-        // _transferFrom(msg.sender, to, value);
-        if (to != address(0)) { // Transfer
-            uint256 balance = balanceOf[msg.sender];
-            require(balance >= value, "WETH: transfer amount exceeds balance");
-
-            balanceOf[msg.sender] = balance - value;
-            balanceOf[to] += value;
-            emit Transfer(msg.sender, to, value);
-        } else { // Withdraw
-            uint256 balance = balanceOf[msg.sender];
-            require(balance >= value, "WETH: burn amount exceeds balance");
-            balanceOf[msg.sender] = balance - value;
-            emit Transfer(msg.sender, address(0), value);
-        
-            (bool success, ) = msg.sender.call{value: value}("");
-            require(success, "WETH: ETH transfer failed");
-        }
-
-        return ITransferReceiver(to).onTokenTransfer(msg.sender, value, data);
     }
 }
