@@ -19,7 +19,7 @@ contract('WETH8', (accounts) => {
   describe('deployment', async () => {
     it('returns the name', async () => {
       let name = await weth8.name()
-      name.should.equal('Wrapped Ether v10')
+      name.should.equal('Wrapped Ether v8')
     })
 
     it('deposits ether', async () => {
