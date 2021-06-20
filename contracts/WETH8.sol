@@ -130,13 +130,13 @@ contract WETH8 is IWETH8 {
     /// Emits two {Transfer} events for minting and burning of the flash-minted amount.
     /// Returns boolean value indicating whether operation succeeded.
     /// Requirements:
-    ///   - `value` must be less or equal to type(uint112).max.
-    ///   - The total of all flash loans in a tx must be less or equal to type(uint112).max.
+    ///   - `value` must be less or equal to the Ether balance of this contract.
+    ///   - The total of all flash loans in a tx must be less or equal to the Ether balance of this contract.
     function flashLoan(IERC3156FlashBorrower receiver, address token, uint256 value, bytes calldata data) external override returns (bool) {
         require(token == address(this), "WETH: flash mint only WETH8");
-        require(value <= type(uint112).max, "WETH: individual loan limit exceeded");
+        require(value <= address(this).balance, "WETH: individual loan limit exceeded");
         flashMinted = flashMinted + value;
-        require(flashMinted <= type(uint112).max, "WETH: total loan limit exceeded");
+        require(flashMinted <= address(this).balance, "WETH: total loan limit exceeded");
         
         // _mintTo(address(receiver), value);
         balanceOf[address(receiver)] += value;
