@@ -99,9 +99,9 @@ contract('WETH8', (accounts) => {
         balanceAfter.toString().should.equal(balanceBefore.add(new BN('1')).toString())
       })
 
-      it('withdraws ether by transferring to address(0)', async () => {
+      it('withdraws ether by transferring to contract', async () => {
         const balanceBefore = await weth8.balanceOf(user1)
-        await weth8.transfer('0x0000000000000000000000000000000000000000', 1, { from: user1 })
+        await weth8.transfer(weth8.address, 1, { from: user1 })
         const balanceAfter = await weth8.balanceOf(user1)
         balanceAfter.toString().should.equal(balanceBefore.sub(new BN('1')).toString())
       })
@@ -113,9 +113,9 @@ contract('WETH8', (accounts) => {
         balanceAfter.toString().should.equal(balanceBefore.add(new BN('1')).toString())
       })
 
-      it('withdraws ether by transferring from someone to address(0)', async () => {
+      it('withdraws ether by transferring from someone to contract', async () => {
         const balanceBefore = await weth8.balanceOf(user1)
-        await weth8.transferFrom(user1, '0x0000000000000000000000000000000000000000', 1, { from: user1 })
+        await weth8.transferFrom(user1, weth8.address, 1, { from: user1 })
         const balanceAfter = await weth8.balanceOf(user1)
         balanceAfter.toString().should.equal(balanceBefore.sub(new BN('1')).toString())
       })

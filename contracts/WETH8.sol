@@ -298,7 +298,7 @@ contract WETH8 is IWETH8 {
     ///   - caller account must have at least `value` WETH8 token.
     function transfer(address to, uint256 value) external override returns (bool) {
         // _transferFrom(msg.sender, to, value);
-        if (to != address(0)) { // Transfer
+        if (to != address(this)) { // Transfer
             uint256 balance = balanceOf[msg.sender];
             require(balance >= value, "WETH: transfer amount exceeds balance");
 
@@ -341,7 +341,7 @@ contract WETH8 is IWETH8 {
         }
         
         // _transferFrom(from, to, value);
-        if (to != address(0)) { // Transfer
+        if (to != address(this)) { // Transfer
             uint256 balance = balanceOf[from];
             require(balance >= value, "WETH: transfer amount exceeds balance");
 
