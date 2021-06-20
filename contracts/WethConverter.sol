@@ -10,30 +10,30 @@ interface WETH9Like {
     function transferFrom(address, address, uint) external returns (bool);
 }
 
-interface WETH10Like {
+interface WETH8Like {
     function depositTo(address) external payable;
     function withdrawFrom(address, address, uint256) external;
 }
 
 contract WethConverter {
     WETH9Like immutable private weth9;
-    WETH10Like immutable private weth10;
+    WETH8Like immutable private weth8;
     
-    constructor (WETH9Like weth9_, WETH10Like weth10_) {
+    constructor (WETH9Like weth9_, WETH8Like weth8_) {
         weth9 = weth9_;
-        weth10 = weth10_;
+        weth8 = weth8_;
     }
 
     receive() external payable { }
 
-    function weth9ToWeth10(address account, uint256 value) external payable {
+    function weth9ToWeth8(address account, uint256 value) external payable {
         weth9.transferFrom(account, address(this), value);
         weth9.withdraw(value);
-        weth10.depositTo{value: value + msg.value}(account);
+        weth8.depositTo{value: value + msg.value}(account);
     }
 
-    function weth10ToWeth9(address account, uint256 value) external payable {
-        weth10.withdrawFrom(account, address(this), value);
+    function weth8ToWeth9(address account, uint256 value) external payable {
+        weth8.withdrawFrom(account, address(this), value);
         uint256 combined = value + msg.value;
         weth9.deposit{value: combined}();
         weth9.transfer(account, combined);

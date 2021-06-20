@@ -1,6 +1,6 @@
 {
-  "name": "WETH10",
-  "version": "10.0.0",
+  "name": "WETH8",
+  "version": "8.0.0",
   "description": "Wrapped Ether with ERC2612 and Flash Minting",
   "main": "README.md",
   "directories": {

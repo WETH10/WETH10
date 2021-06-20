@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.7.6;
-import "../WETH10.sol";
+import "../WETH8.sol";
 
 
 /// @dev A contract that will receive weth, and allows for it to be retrieved.
 contract MockHolder {
     constructor (address payable weth, address retriever) {
-        WETH10(weth).approve(retriever, type(uint).max);
+        WETH8(weth).approve(retriever, type(uint).max);
     }
 }
 
 /// @dev Invariant testing
-contract WETH10Fuzzing {
+contract WETH8Fuzzing {
 
-    WETH10 internal weth;
+    WETH8 internal weth;
     address internal holder;
 
-    /// @dev Instantiate the WETH10 contract, and a holder address that will return weth when asked to.
+    /// @dev Instantiate the WETH8 contract, and a holder address that will return weth when asked to.
     constructor () {
-        weth = new WETH10();
+        weth = new WETH8();
         holder = address(new MockHolder(address(weth), address(this)));
     }
 
