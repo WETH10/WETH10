@@ -4,8 +4,6 @@ const TestFlashLender = artifacts.require('TestFlashLender')
 const { BN, expectRevert } = require('@openzeppelin/test-helpers')
 require('chai').use(require('chai-as-promised')).should()
 
-const MAX = "5192296858534827628530496329220095"
-
 contract('WETH8 - Flash Minting', (accounts) => {
   const [deployer, user1, user2] = accounts
   let weth8
@@ -14,6 +12,8 @@ contract('WETH8 - Flash Minting', (accounts) => {
   beforeEach(async () => {
     weth8 = await WETH8.new({ from: deployer })
     flash = await TestFlashLender.new({ from: deployer })
+
+    await weth8.deposit({ from: deployer, value: 100 })
   })
 
   it('should do a simple flash mint', async () => {
@@ -29,8 +29,8 @@ contract('WETH8 - Flash Minting', (accounts) => {
     flashSender.toString().should.equal(flash.address)
   })
 
-  it('cannot flash mint beyond the total supply limit', async () => {
-    await expectRevert(flash.flashLoan(weth8.address, (new BN(MAX)).addn(1), { from: user1 }), 'WETH: individual loan limit exceeded')
+  it('cannot flash mint beyond the individual limit', async () => {
+    await expectRevert(flash.flashLoan(weth8.address, 101, { from: user1 }), 'WETH: individual loan limit exceeded')
   })
 
   it('needs to return funds after a flash mint', async () => {
@@ -45,6 +45,10 @@ contract('WETH8 - Flash Minting', (accounts) => {
 
     const flashBalance = await flash.flashBalance()
     flashBalance.toString().should.equal('3')
+  })
+
+  it('cannot flash mint beyond the total loan limit', async () => {
+    await expectRevert(flash.flashLoanAndReenter(weth8.address, 50, { from: deployer }), 'WETH: total loan limit exceeded')
   })
 
   describe('with a non-zero WETH supply', () => {
