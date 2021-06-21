@@ -4,6 +4,7 @@
 pragma solidity 0.7.6;
 
 import "./interfaces/IWETH8.sol";
+import "./interfaces/IERC1271.sol";
 import "./interfaces/IERC3156FlashBorrower.sol";
 
 interface ITransferReceiver {
@@ -276,14 +277,20 @@ contract WETH8 is IWETH8 {
                 nonces[owner]++,
                 deadline));
 
-        bytes32 hash = keccak256(
+        bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
                 chainId == deploymentChainId ? _DOMAIN_SEPARATOR : _calculateDomainSeparator(chainId),
                 hashStruct));
 
-        address signer = ecrecover(hash, v, r, s);
-        require(signer != address(0) && signer == owner, "WETH: invalid permit");
+        uint256 size;
+        assembly { size := extcodesize(owner) }
+        if (size > 0) { // Owner is a contract
+            require(IERC1271(owner).isValidSignature(digest, abi.encodePacked(r, s, v)) == IERC1271(owner).isValidSignature.selector, "WETH: invalid permit");
+        } else {        // Owner is an EOA
+            address signer = ecrecover(digest, v, r, s);
+            require(signer != address(0) && signer == owner, "WETH: invalid permit");
+        }
 
         // _approve(owner, spender, value);
         allowance[owner][spender] = value;
