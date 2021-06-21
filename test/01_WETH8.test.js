@@ -1,4 +1,5 @@
 const WETH8 = artifacts.require('WETH8')
+const TestERC1271 = artifacts.require('TestERC1271')
 const { signERC2612Permit } = require('eth-permit')
 const TestTransferReceiver = artifacts.require('TestTransferReceiver')
 
@@ -184,6 +185,24 @@ contract('WETH8', (accounts) => {
         const permitResult = await signERC2612Permit(web3.currentProvider, weth8.address, user1, user2, '1')
         await expectRevert(
           weth8.permit(user1, user2, '2', permitResult.deadline, permitResult.v, permitResult.r, permitResult.s),
+          'WETH: invalid permit'
+        )
+      })
+
+      it('approves to increase allowance with an ERC1271 permit', async () => {
+        const approver = await TestERC1271.new({ from: deployer })
+        await approver.approveAll();
+        const permitResult = await signERC2612Permit(web3.currentProvider, weth8.address, user1, user2, '1') // TestERC1271 approves all permits
+        await weth8.permit(approver.address, user2, '1', permitResult.deadline, permitResult.v, permitResult.r, permitResult.s)
+        const allowanceAfter = await weth8.allowance(approver.address, user2)
+        allowanceAfter.toString().should.equal('1')
+      })
+
+      it('does not approve with invalid ERC1271 permit', async () => {
+        const approver = await TestERC1271.new({ from: deployer })
+        const permitResult = await signERC2612Permit(web3.currentProvider, weth8.address, user1, user2, '1') // TestERC1271 denies all permits
+        await expectRevert(
+          weth8.permit(approver.address, user2, '1', permitResult.deadline, permitResult.v, permitResult.r, permitResult.s),
           'WETH: invalid permit'
         )
       })
