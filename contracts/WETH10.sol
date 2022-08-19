@@ -40,7 +40,7 @@ contract WETH10 is IWETH10 {
 
     /// @dev Current amount of flash-minted WETH10 token.
     uint256 public override flashMinted;
-    
+
     constructor() {
         uint256 chainId;
         assembly {chainId := chainid()}
@@ -67,7 +67,7 @@ contract WETH10 is IWETH10 {
         assembly {chainId := chainid()}
         return chainId == deploymentChainId ? _DOMAIN_SEPARATOR : _calculateDomainSeparator(chainId);
     }
-    
+
     /// @dev Returns the total supply of WETH10 token as the ETH held in this contract.
     function totalSupply() external view override returns (uint256) {
         return address(this).balance + flashMinted;
@@ -137,7 +137,7 @@ contract WETH10 is IWETH10 {
         require(value <= type(uint112).max, "WETH: individual loan limit exceeded");
         flashMinted = flashMinted + value;
         require(flashMinted <= type(uint112).max, "WETH: total loan limit exceeded");
-        
+
         // _mintTo(address(receiver), value);
         balanceOf[address(receiver)] += value;
         emit Transfer(address(0), address(receiver), value);
@@ -146,7 +146,7 @@ contract WETH10 is IWETH10 {
             receiver.onFlashLoan(msg.sender, address(this), value, 0, data) == CALLBACK_SUCCESS,
             "WETH: flash loan failed"
         );
-        
+
         // _decreaseAllowance(address(receiver), address(this), value);
         uint256 allowed = allowance[address(receiver)][address(this)];
         if (allowed != type(uint256).max) {
@@ -161,13 +161,13 @@ contract WETH10 is IWETH10 {
         require(balance >= value, "WETH: burn amount exceeds balance");
         balanceOf[address(receiver)] = balance - value;
         emit Transfer(address(receiver), address(0), value);
-        
+
         flashMinted = flashMinted - value;
         return true;
     }
 
     /// @dev Burn `value` WETH10 token from caller account and withdraw matching ETH to the same.
-    /// Emits {Transfer} event to reflect WETH10 token burn of `value` to `address(0)` from caller account. 
+    /// Emits {Transfer} event to reflect WETH10 token burn of `value` to `address(0)` from caller account.
     /// Requirements:
     ///   - caller account must have at least `value` balance of WETH10 token.
     function withdraw(uint256 value) external override {
@@ -177,7 +177,7 @@ contract WETH10 is IWETH10 {
         balanceOf[msg.sender] = balance - value;
         emit Transfer(msg.sender, address(0), value);
 
-        // _transferEther(msg.sender, value);        
+        // _transferEther(msg.sender, value);
         (bool success, ) = msg.sender.call{value: value}("");
         require(success, "WETH: ETH transfer failed");
     }
@@ -193,7 +193,7 @@ contract WETH10 is IWETH10 {
         balanceOf[msg.sender] = balance - value;
         emit Transfer(msg.sender, address(0), value);
 
-        // _transferEther(to, value);        
+        // _transferEther(to, value);
         (bool success, ) = to.call{value: value}("");
         require(success, "WETH: ETH transfer failed");
     }
@@ -216,14 +216,14 @@ contract WETH10 is IWETH10 {
                 emit Approval(from, msg.sender, reduced);
             }
         }
-        
+
         // _burnFrom(from, value);
         uint256 balance = balanceOf[from];
         require(balance >= value, "WETH: burn amount exceeds balance");
         balanceOf[from] = balance - value;
         emit Transfer(from, address(0), value);
 
-        // _transferEther(to, value);        
+        // _transferEther(to, value);
         (bool success, ) = to.call{value: value}("");
         require(success, "WETH: Ether transfer failed");
     }
@@ -248,7 +248,7 @@ contract WETH10 is IWETH10 {
         // _approve(msg.sender, spender, value);
         allowance[msg.sender][spender] = value;
         emit Approval(msg.sender, spender, value);
-        
+
         return IApprovalReceiver(spender).onTokenApproval(msg.sender, value, data);
     }
 
@@ -298,7 +298,7 @@ contract WETH10 is IWETH10 {
     ///   - caller account must have at least `value` WETH10 token.
     function transfer(address to, uint256 value) external override returns (bool) {
         // _transferFrom(msg.sender, to, value);
-        if (to != address(0)) { // Transfer
+        if (to != address(0) && to != address(this)) { // Transfer
             uint256 balance = balanceOf[msg.sender];
             require(balance >= value, "WETH: transfer amount exceeds balance");
 
@@ -310,11 +310,11 @@ contract WETH10 is IWETH10 {
             require(balance >= value, "WETH: burn amount exceeds balance");
             balanceOf[msg.sender] = balance - value;
             emit Transfer(msg.sender, address(0), value);
-            
+
             (bool success, ) = msg.sender.call{value: value}("");
             require(success, "WETH: ETH transfer failed");
         }
-        
+
         return true;
     }
 
@@ -339,9 +339,9 @@ contract WETH10 is IWETH10 {
                 emit Approval(from, msg.sender, reduced);
             }
         }
-        
+
         // _transferFrom(from, to, value);
-        if (to != address(0)) { // Transfer
+        if (to != address(0) && to != address(this)) { // Transfer
             uint256 balance = balanceOf[from];
             require(balance >= value, "WETH: transfer amount exceeds balance");
 
@@ -353,15 +353,15 @@ contract WETH10 is IWETH10 {
             require(balance >= value, "WETH: burn amount exceeds balance");
             balanceOf[from] = balance - value;
             emit Transfer(from, address(0), value);
-        
+
             (bool success, ) = msg.sender.call{value: value}("");
             require(success, "WETH: ETH transfer failed");
         }
-        
+
         return true;
     }
 
-    /// @dev Moves `value` WETH10 token from caller's account to account (`to`), 
+    /// @dev Moves `value` WETH10 token from caller's account to account (`to`),
     /// after which a call is executed to an ERC677-compliant contract with the `data` parameter.
     /// A transfer to `address(0)` triggers an ETH withdraw matching the sent WETH10 token in favor of caller.
     /// Emits {Transfer} event.
@@ -383,7 +383,7 @@ contract WETH10 is IWETH10 {
             require(balance >= value, "WETH: burn amount exceeds balance");
             balanceOf[msg.sender] = balance - value;
             emit Transfer(msg.sender, address(0), value);
-        
+
             (bool success, ) = msg.sender.call{value: value}("");
             require(success, "WETH: ETH transfer failed");
         }
