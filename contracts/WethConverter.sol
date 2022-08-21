@@ -16,10 +16,15 @@ interface WETH10Like {
 }
 
 contract WethConverter {
-    WETH9Like constant private weth9 = WETH9Like(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // ETH wrapper contract v9
-    WETH10Like constant private weth10 = WETH10Like(0xf4BB2e28688e89fCcE3c0580D37d36A7672E8A9F); // ETH wrapper contract v10
+    WETH9Like immutable private weth9;
+    WETH10Like immutable private weth10;
     
-    receive() external payable {}
+    constructor (WETH9Like weth9_, WETH10Like weth10_) {
+        weth9 = weth9_;
+        weth10 = weth10_;
+    }
+
+    receive() external payable { }
 
     function weth9ToWeth10(address account, uint256 value) external payable {
         weth9.transferFrom(account, address(this), value);
